@@ -1,0 +1,3529 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#132b24">
+  <title>SASP Scoreboard</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #192720;
+      --muted: #65736b;
+      --paper: #f4f5ef;
+      --card: #fff;
+      --green: #17392e;
+      --lime: #d5ec76;
+      --line: #e4e9e2;
+      --danger: #a43f36;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+    }
+
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+
+    .topbar {
+      background: var(--green);
+      color: white;
+      padding: 18px max(24px, calc((100vw - 1160px) / 2));
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 11px;
+      background: var(--lime);
+      color: var(--green);
+      font-weight: 900;
+      letter-spacing: -1px;
+    }
+    .brand-name { font-weight: 750; letter-spacing: .01em; }
+    .brand-caption { color: #b8c9bd; font-size: 12px; margin-top: 2px; }
+    .prototype-tag {
+      border: 1px solid #547066;
+      border-radius: 999px;
+      padding: 7px 11px;
+      color: #d4e2d7;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    main {
+      width: min(1160px, calc(100% - 40px));
+      margin: 38px auto 56px;
+    }
+
+    .intro {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    .screen-nav {
+      display: flex;
+      gap: 8px;
+      margin: 0 0 18px;
+      padding: 5px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: white;
+    }
+    .screen-nav button {
+      flex: 1;
+      min-height: 42px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 750;
+    }
+    .screen-nav button[aria-current="page"] {
+      background: var(--green);
+      color: white;
+    }
+    .app-screen[hidden] { display: none; }
+    .screen-nav[hidden], #welcome-screen[hidden] { display: none; }
+    .welcome-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .welcome-choice {
+      min-height: 145px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fbfcf8;
+      text-align: left;
+    }
+    .welcome-choice:not(:disabled):hover { border-color: #91a67d; background: #f6f9f0; }
+    .welcome-choice:disabled { cursor: not-allowed; opacity: .72; }
+    .welcome-choice-title { display: block; color: var(--green); font-size: 16px; font-weight: 800; }
+    .welcome-choice-detail { display: block; margin-top: 8px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .welcome-note { margin: 14px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    @media (max-width: 520px) {
+      .welcome-grid { grid-template-columns: 1fr; }
+      .welcome-choice { min-height: 110px; }
+    }
+    .schedule-list { display: grid; gap: 9px; margin-top: 16px; }
+    .event-list { display: grid; gap: 9px; margin-top: 16px; }
+    .match-event-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #fbfcf8;
+    }
+    .match-event-main { min-width: 0; }
+    .match-event-title { font-size: 13px; font-weight: 750; }
+    .match-event-detail { margin-top: 4px; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+    .match-event-actions { display: flex; flex-wrap: wrap; gap: 7px; }
+    .match-form-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .selected-event { margin-bottom: 16px; }
+    .selected-event h2 { margin-bottom: 5px; }
+    .selected-event p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; white-space: pre-line; }
+    .schedule-event {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #fbfcf8;
+    }
+    .schedule-event-main { flex: 1; min-width: 0; }
+    .schedule-event-date { color: var(--green); font-size: 12px; font-weight: 800; white-space: nowrap; }
+    .schedule-event-title { font-size: 13px; font-weight: 750; }
+    .schedule-event-detail { margin-top: 4px; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+    .eyebrow {
+      color: #53715f;
+      text-transform: uppercase;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .13em;
+    }
+    h1 { margin: 8px 0 7px; font-size: clamp(28px, 4vw, 38px); letter-spacing: -.04em; }
+    .subtitle { margin: 0; color: var(--muted); }
+
+    .event-card, .panel, .stat {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 5px 20px rgb(26 47 34 / 4%);
+    }
+    .event-card {
+      padding: 20px 22px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-bottom: 16px;
+    }
+    .match-setup { margin-bottom: 16px; }
+    .match-setup-fields { display: grid; gap: 14px; }
+    .team-setup { margin-bottom: 16px; }
+    .team-setup-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .member-form { display: grid; gap: 13px; margin-bottom: 17px; }
+    .member-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
+    .member-form-heading { margin: 2px 0 -4px; font-size: 12px; }
+    .member-form .form-field label { margin-bottom: 5px; }
+    .selection-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 7px; }
+    .selection-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcf8;
+      color: var(--ink);
+      font-size: 12px;
+    }
+    .selection-option input { accent-color: var(--green); }
+    .squad-assignment-list { display: grid; gap: 8px; }
+    .squad-assignment-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcf8;
+      font-size: 12px;
+    }
+    .squad-assignment-row select {
+      width: 100%;
+      padding: 7px 9px;
+      border: 1px solid #dce3db;
+      border-radius: 7px;
+      background: white;
+      color: var(--ink);
+    }
+    .squad-shooter-name { grid-column: 1 / -1; font-weight: 700; }
+    .squad-field label { display: block; margin: 0 0 4px; color: var(--muted); font-size: 10px; font-weight: 700; }
+    .match-setup-status { min-height: 16px; margin: 0; color: var(--muted); font-size: 11px; }
+    .field label, .form-field label {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .form-field > .field-label {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .field input, .field select {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      color: var(--ink);
+      background: transparent;
+      font-size: 17px;
+      font-weight: 700;
+      padding: 2px 0;
+    }
+    .field input:focus, .field select:focus { box-shadow: 0 2px 0 #8da84b; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .stat { padding: 17px 19px; }
+    .stat-label { color: var(--muted); font-size: 12px; font-weight: 650; }
+    .stat-value { margin-top: 8px; font-size: 25px; font-weight: 800; letter-spacing: -.04em; }
+    .stat-detail { margin-top: 3px; color: #829087; font-size: 11px; }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(290px, .7fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .panel { overflow: hidden; }
+    .panel-head {
+      min-height: 69px;
+      padding: 17px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    h2 { margin: 0; font-size: 16px; letter-spacing: -.02em; }
+    .panel-caption { margin-top: 4px; color: var(--muted); font-size: 12px; }
+    .panel-body { padding: 18px 20px 20px; }
+
+    .button {
+      border: 0;
+      border-radius: 9px;
+      padding: 10px 13px;
+      background: var(--green);
+      color: white;
+      font-size: 12px;
+      font-weight: 750;
+      transition: background .15s ease;
+    }
+    .button:hover { background: #285442; }
+    .button.secondary { background: #edf2e8; color: var(--green); }
+    .button.secondary:hover { background: #e2ebd8; }
+
+    .inline-form {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 9px;
+      margin-bottom: 17px;
+    }
+    .team-setup-actions .inline-form { flex: 1; margin-bottom: 0; }
+    .run-form {
+      margin-bottom: 17px;
+    }
+    .form-field input, .form-field select {
+      width: 100%;
+      min-width: 0;
+      padding: 10px 11px;
+      border: 1px solid #dce3db;
+      border-radius: 8px;
+      background: white;
+      color: var(--ink);
+      outline: none;
+    }
+    .form-field input:focus, .form-field select:focus {
+      border-color: #718d55;
+      box-shadow: 0 0 0 3px rgb(113 141 85 / 13%);
+    }
+
+    .roster { list-style: none; margin: 0; padding: 0; }
+    .roster li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-top: 1px solid #edf0eb;
+    }
+    .roster-actions { display: flex; flex-wrap: wrap; justify-content: end; gap: 7px; }
+    .archive-button { color: var(--danger); }
+    .archive-section { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
+    .archive-section summary { color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer; }
+    .archive-note { margin: 8px 0; color: var(--muted); font-size: 11px; }
+    .person { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .avatar {
+      flex: 0 0 34px;
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background: #edf2e7;
+      color: #375640;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .person-name { font-size: 13px; font-weight: 700; overflow-wrap: anywhere; }
+    .person-meta { margin-top: 3px; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+    .match-totals { display: grid; gap: 8px; margin-top: 16px; }
+    .match-totals[hidden] { display: none; }
+    .match-totals-heading { margin: 0; font-size: 13px; }
+    #match-total-list { display: grid; gap: 8px; }
+    .summary-tabs {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      margin: 10px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .summary-tab {
+      flex: 0 0 auto;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      padding: 9px 10px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .summary-tab[aria-selected="true"] { border-bottom-color: var(--green); color: var(--green); }
+    .summary-panel[hidden] { display: none; }
+    .summary-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 8px;
+      margin: 12px 0;
+    }
+    .summary-metric {
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcf8;
+    }
+    .summary-metric-label { color: var(--muted); font-size: 10px; font-weight: 650; }
+    .summary-metric-value { margin-top: 5px; font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .summary-note { margin: 9px 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
+    .summary-table-wrap { overflow-x: auto; }
+    .summary-table { width: 100%; min-width: 820px; border-collapse: collapse; font-size: 10px; }
+    .summary-table th, .summary-table td { padding: 8px 6px; border-bottom: 1px solid #edf0eb; text-align: right; white-space: nowrap; }
+    .summary-table th { color: var(--muted); font-weight: 700; }
+    .summary-table th:first-child, .summary-table td:first-child { text-align: left; }
+    .summary-table td:first-child { font-weight: 700; }
+    .summary-table .stage-status { color: var(--muted); text-align: left; }
+    .match-total-card {
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #fbfcf8;
+    }
+    .match-total-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+    .match-total-value { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .match-total-detail { margin-top: 4px; color: var(--muted); font-size: 10px; }
+    .icon-button {
+      border: 0;
+      background: transparent;
+      color: #849188;
+      padding: 7px;
+      border-radius: 7px;
+      font-size: 12px;
+    }
+    .icon-button:hover { background: #fff0ed; color: var(--danger); }
+    .empty {
+      padding: 21px 12px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .empty strong { display: block; color: var(--ink); margin-bottom: 4px; }
+
+    .run-list { display: grid; gap: 9px; }
+    .run-entry-fields {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr .9fr auto;
+      gap: 9px;
+      margin-bottom: 14px;
+      align-items: end;
+    }
+    .stage-target-card {
+      margin: 0 0 14px;
+      padding: 13px;
+      border: 1px solid #e4e9e2;
+      border-radius: 11px;
+      background: #fbfcf8;
+    }
+    .stage-target-card[hidden] { display: none; }
+    .stage-guide-caption {
+      margin: 0 0 9px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+    .stage-reference-diagram {
+      margin: 10px 0 18px;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fbfcf8;
+    }
+    .stage-reference-selector { margin-bottom: 14px; }
+    .stage-guide { display: block; width: 80%; height: auto; margin-inline: auto; }
+    .target-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 8px;
+      margin-top: 9px;
+    }
+    .target-check {
+      min-width: 0;
+      margin: 0;
+      padding: 8px 10px;
+      border: 1px solid #e4e9e2;
+      border-radius: 9px;
+      background: white;
+    }
+    .target-check legend {
+      max-width: 100%;
+      padding: 0 4px;
+      color: var(--ink);
+      font-size: 11px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+    .target-options { display: flex; gap: 8px; }
+    .target-result-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(88px, .65fr);
+      gap: 8px;
+      align-items: end;
+    }
+    .target-option {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      min-height: 33px;
+      border: 1px solid #e0e7df;
+      border-radius: 7px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .target-option:has(input:checked) { border-color: #537b54; background: #eef5e9; color: #2b5638; }
+    .target-option.miss:has(input:checked) { border-color: #b85b4e; background: #fff0ed; color: #8d342d; }
+    .target-option input { accent-color: #426449; }
+    .attempts-field label {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 650;
+    }
+    .attempts-field input {
+      width: 100%;
+      min-width: 0;
+      padding: 6px 8px;
+      border: 1px solid #dce3db;
+      border-radius: 7px;
+      color: var(--ink);
+    }
+    .run-group {
+      padding: 12px;
+      border: 1px solid #e4e9e2;
+      border-radius: 10px;
+    }
+    .run-group-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .run-group-score { text-align: right; font-size: 12px; font-weight: 800; white-space: nowrap; }
+    .run-group-score small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; font-weight: 500; }
+    .run-group .run-item { border-color: #edf0eb; padding: 9px; }
+    .run-group .run-item + .run-item { margin-top: 6px; }
+    .run-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid #edf0eb;
+      border-radius: 10px;
+    }
+    .run-actions { display: flex; align-items: center; gap: 4px; }
+    .accept-stage-button {
+      border: 1px solid #dce7d5;
+      border-radius: 7px;
+      padding: 7px 9px;
+      background: #edf4e8;
+      color: var(--green);
+      font-size: 10px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+    .accept-stage-button:hover { background: #e1ecd9; }
+    .run-stage { color: var(--muted); font-size: 11px; margin-top: 3px; }
+    .run-status { color: #47724c; font-size: 10px; margin-top: 3px; }
+    .run-status.dropped { color: var(--danger); }
+    .form-hint { min-height: 18px; margin: -7px 0 12px; color: var(--muted); font-size: 11px; }
+    .run-time { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .run-time-block { text-align: right; }
+    .run-time-detail { margin-top: 3px; color: var(--muted); font-size: 10px; white-space: nowrap; }
+    .notice {
+      margin-top: 14px;
+      padding: 11px 12px;
+      border-radius: 9px;
+      background: #f3f6ed;
+      color: #52634f;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+    .footer {
+      margin-top: 22px;
+      color: #849087;
+      text-align: center;
+      font-size: 11px;
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 760px) {
+      main { width: min(100% - 28px, 560px); margin-top: 27px; }
+      .topbar { padding: 14px; }
+      .intro { display: block; }
+      .intro .prototype-tag { display: inline-block; margin-top: 14px; }
+      .content-grid { grid-template-columns: 1fr; }
+      .member-form-grid { grid-template-columns: 1fr; }
+      .stats { gap: 8px; }
+      .stat { padding: 14px 12px; }
+      .stat-value { font-size: 22px; }
+      .run-entry-fields { grid-template-columns: 1fr 1fr; }
+      .run-entry-fields .button { min-height: 39px; }
+    }
+    @media (max-width: 420px) {
+      .event-card { padding: 16px; gap: 12px; }
+      .stats { grid-template-columns: 1fr 1fr; }
+      .stats .stat:last-child { grid-column: 1 / -1; }
+      .panel-head, .panel-body { padding-left: 15px; padding-right: 15px; }
+      .inline-form { grid-template-columns: 1fr; }
+      .run-entry-fields { grid-template-columns: 1fr; }
+      .target-grid { grid-template-columns: 1fr; }
+      .run-item { grid-template-columns: minmax(0, 1fr) auto; }
+      .run-actions { grid-column: 2; grid-row: 1; flex-direction: column; align-items: end; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">S</div>
+      <div>
+        <div class="brand-name">SASP Scoreboard</div>
+        <div class="brand-caption">A simple home for your team and match day</div>
+      </div>
+    </div>
+    <div class="prototype-tag">EARLY PROTOTYPE</div>
+  </header>
+
+  <main>
+    <section class="intro" aria-labelledby="page-title">
+      <div>
+        <div class="eyebrow" id="page-eyebrow">Team management</div>
+        <h1 id="page-title">Set Up Your Team.</h1>
+        <p class="subtitle" id="page-subtitle">Manage team details and members in one place.</p>
+      </div>
+    </section>
+
+    <section class="panel" id="welcome-screen" aria-labelledby="welcome-heading" hidden>
+      <div class="panel-head">
+        <div>
+          <h2 id="welcome-heading">Welcome To SASP Scoreboard</h2>
+          <div class="panel-caption">Start by creating a team or learn about joining an existing team.</div>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="welcome-grid">
+          <button class="welcome-choice" id="welcome-create-team" type="button">
+            <span class="welcome-choice-title">Create a team</span>
+            <span class="welcome-choice-detail">Set up a team on this device and add its members.</span>
+          </button>
+          <button class="welcome-choice" id="welcome-join-team" type="button" disabled aria-describedby="join-team-status">
+            <span class="welcome-choice-title">Join an existing team · Coming soon</span>
+            <span class="welcome-choice-detail">Joining teams online is not available in this prototype.</span>
+          </button>
+        </div>
+        <p class="welcome-note" id="join-team-status">Teams are currently saved only in this browser on this device. Online accounts and team invitations have not been set up.</p>
+      </div>
+    </section>
+
+    <nav class="screen-nav" aria-label="Main menu" hidden>
+      <button id="team-screen-button" type="button" aria-controls="team-screen">Team Setup</button>
+      <button id="match-screen-button" type="button" aria-controls="match-screen">Match Setup</button>
+      <button id="scoring-screen-button" type="button" aria-controls="scoring-screen">Scoring</button>
+      <button id="stage-reference-screen-button" type="button" aria-controls="stage-reference-screen">Stage Layout</button>
+      <button id="stats-screen-button" type="button" aria-controls="stats-screen">Stats</button>
+      <button id="schedule-screen-button" type="button" aria-controls="schedule-screen">Schedule</button>
+    </nav>
+
+    <section class="app-screen" id="team-screen" aria-labelledby="team-setup-heading" hidden>
+      <section class="event-card" aria-label="Selected team">
+        <div class="field">
+          <label for="team-select">TEAM</label>
+          <select id="team-select" aria-label="Current team"></select>
+        </div>
+      </section>
+      <section class="panel team-setup" aria-labelledby="team-setup-heading">
+      <div class="panel-head">
+        <div>
+          <h2 id="team-setup-heading">Create A Team</h2>
+          <div class="panel-caption">Create separate team rosters and switch between them using the team selector.</div>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="team-setup-actions">
+          <form class="inline-form" id="team-form">
+            <div class="form-field">
+              <label for="new-team-name">Team name</label>
+              <input id="new-team-name" maxlength="60" required placeholder="e.g. Northside SASP">
+            </div>
+            <button class="button secondary" type="submit">Add new team</button>
+          </form>
+          <button class="button secondary archive-button" id="archive-team-button" type="button">Delete selected team</button>
+        </div>
+        <p class="match-setup-status" id="team-setup-status" aria-live="polite"></p>
+        <details class="archive-section" id="archived-teams-section">
+          <summary>Archived Teams</summary>
+          <p class="archive-note">Archived teams are removed from active selection, but their members, matches, and scores are kept. Restore a team to access its history again, or permanently delete it and all related records.</p>
+          <ul class="roster" id="archived-team-list"></ul>
+        </details>
+      </div>
+    </section>
+      <section class="panel" aria-labelledby="roster-heading">
+        <div class="panel-head">
+          <div>
+            <h2 id="roster-heading">Team Members</h2>
+            <div class="panel-caption">Add members and optional member and parent/guardian contact details to the selected team.</div>
+          </div>
+        </div>
+        <div class="panel-body">
+          <form class="member-form" id="competitor-form">
+            <div class="member-form-grid">
+              <div class="form-field">
+                <label for="member-first-name">First name</label>
+                <input id="member-first-name" name="first-name" maxlength="60" required autocomplete="given-name">
+              </div>
+              <div class="form-field">
+                <label for="member-last-name">Last name</label>
+                <input id="member-last-name" name="last-name" maxlength="60" required autocomplete="family-name">
+              </div>
+              <div class="form-field">
+                <label for="member-preferred-name">Preferred name (optional)</label>
+                <input id="member-preferred-name" name="preferred-name" maxlength="60" autocomplete="nickname">
+              </div>
+              <div class="form-field">
+                <label for="member-grade">Grade (optional)</label>
+                <input id="member-grade" name="grade" maxlength="24" placeholder="e.g. 10th grade">
+              </div>
+              <div class="form-field">
+                <label for="member-graduation-year">Graduation year (optional)</label>
+                <select id="member-graduation-year" name="graduation-year">
+                  <option value="">Select graduation year</option>
+                </select>
+              </div>
+            </div>
+            <h3 class="member-form-heading">Member Contact (Optional)</h3>
+            <div class="member-form-grid">
+              <div class="form-field">
+                <label for="member-email">Email</label>
+                <input id="member-email" name="email" type="email" maxlength="254" autocomplete="email">
+              </div>
+              <div class="form-field">
+                <label for="member-phone">Phone</label>
+                <input id="member-phone" name="phone" type="tel" maxlength="30" autocomplete="tel">
+              </div>
+            </div>
+            <h3 class="member-form-heading">Parent/Guardian Contact (Optional)</h3>
+            <div class="member-form-grid">
+              <div class="form-field">
+                <label for="guardian-name">Parent/guardian name</label>
+                <input id="guardian-name" name="guardian-name" maxlength="120" autocomplete="name">
+              </div>
+              <div class="form-field">
+                <label for="guardian-email">Parent/guardian email</label>
+                <input id="guardian-email" name="guardian-email" type="email" maxlength="254" autocomplete="email">
+              </div>
+              <div class="form-field">
+                <label for="guardian-phone">Parent/guardian phone</label>
+                <input id="guardian-phone" name="guardian-phone" type="tel" maxlength="30" autocomplete="tel">
+              </div>
+            </div>
+            <div>
+              <button class="button secondary" id="add-member-button" type="submit">Add team member</button>
+              <p class="match-setup-status" id="member-setup-status" aria-live="polite"></p>
+            </div>
+          </form>
+          <p class="form-hint">Member and parent/guardian contact fields are optional. Contact details stay in this browser on this device and are not encrypted, synced, or backed up.</p>
+          <ul class="roster" id="roster-list" aria-live="polite"></ul>
+          <details class="archive-section" id="archived-members-section">
+            <summary>Archived Team Members</summary>
+            <p class="archive-note">Archived members are excluded from new matches. Restore them, or permanently delete them and their related score records.</p>
+            <ul class="roster" id="archived-member-list"></ul>
+          </details>
+        </div>
+      </section>
+    </section>
+
+    <section class="app-screen" id="match-screen" aria-labelledby="match-setup-heading" hidden>
+    <section class="panel match-setup" aria-labelledby="match-setup-heading">
+      <div class="panel-head">
+        <div>
+          <h2 id="match-setup-heading">Match Setup</h2>
+          <div class="panel-caption">Create events in advance and assign each shooter to an event-specific squad of up to four, with their SASP division, category, and firearm discipline.</div>
+        </div>
+      </div>
+      <div class="panel-body">
+        <form class="match-setup-fields" id="match-form">
+          <div class="member-form-grid">
+            <div class="form-field">
+              <label for="new-match-name">Event name</label>
+              <input id="new-match-name" maxlength="80" required placeholder="e.g. Fall Invitational">
+            </div>
+            <div class="form-field">
+              <label for="new-match-start-date">Event start date</label>
+              <input id="new-match-start-date" type="date" required>
+            </div>
+            <div class="form-field">
+              <label for="new-match-end-date">Event end date (optional)</label>
+              <input id="new-match-end-date" type="date">
+            </div>
+            <div class="form-field">
+              <label for="new-match-location">Event location (optional)</label>
+              <input id="new-match-location" maxlength="160" placeholder="Range or address">
+            </div>
+          </div>
+          <div class="form-field">
+            <label for="new-match-notes">Event notes (optional)</label>
+            <input id="new-match-notes" maxlength="500" placeholder="Arrival details, equipment, or other event information">
+          </div>
+          <div class="form-field">
+            <span class="field-label">Stages in this event</span>
+            <div class="selection-list" id="match-stage-options"></div>
+          </div>
+          <div class="form-field">
+            <span class="field-label">Team members participating</span>
+            <div class="selection-list" id="match-shooter-options"></div>
+          </div>
+          <div class="form-field">
+            <span class="field-label">Squads and SASP classification (up to 4 shooters each)</span>
+            <div class="squad-assignment-list" id="match-squad-options"></div>
+            <p class="form-hint">Select each shooter's division, applicable category, and firearm discipline (RFI/RFO/etc.). Classifications are set per event.</p>
+            <button class="button secondary" id="add-match-squad" type="button">Add squad</button>
+          </div>
+          <div>
+            <div class="match-form-actions">
+              <button class="button" id="save-match-button" type="submit">Create event</button>
+              <button class="button secondary" id="cancel-match-edit" type="button" hidden>Cancel edit</button>
+            </div>
+            <p class="match-setup-status" id="match-setup-status" aria-live="polite"></p>
+          </div>
+        </form>
+        <h3 class="match-totals-heading">Saved Events</h3>
+        <div class="event-list" id="match-event-list" aria-live="polite"></div>
+      </div>
+    </section>
+    </section>
+
+    <section class="app-screen" id="scoring-screen" aria-labelledby="scoring-heading" hidden>
+      <section class="event-card" aria-label="Selected event for scoring">
+        <div class="field">
+          <label for="match-name">EVENT TO SCORE</label>
+          <select id="match-name" aria-label="Current event to score">
+            <option value="">Create an event in Match Setup first</option>
+          </select>
+        </div>
+      </section>
+      <section class="panel selected-event" id="selected-event-card" aria-labelledby="scoring-heading">
+        <div class="panel-body">
+          <h2 id="scoring-heading">Scoring</h2>
+          <p id="selected-event-details">Create an event in Match Setup, then select it here when you are ready to score.</p>
+        </div>
+      </section>
+    <section class="stats" aria-label="Match summary">
+      <div class="stat">
+        <div class="stat-label">Competitors</div>
+        <div class="stat-value" id="competitor-count">0</div>
+        <div class="stat-detail">Selected for this match</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Recorded runs</div>
+        <div class="stat-value" id="run-count">0</div>
+        <div class="stat-detail">In the current match</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Fastest scored string</div>
+        <div class="stat-value" id="fastest-time">—</div>
+        <div class="stat-detail">Includes target penalties where recorded</div>
+      </div>
+    </section>
+
+    <div class="content-grid">
+      <section class="panel" aria-labelledby="runs-heading">
+        <div class="panel-head">
+          <div>
+            <h2 id="runs-heading">Selected Shooter And Stage</h2>
+            <div class="panel-caption">Record the timer and mark every target for each string, then accept the completed stage total.</div>
+          </div>
+        </div>
+        <div class="panel-body">
+          <form class="run-form" id="run-form">
+            <div class="run-entry-fields">
+              <div class="form-field">
+                <label for="run-competitor">Competitor</label>
+                <select id="run-competitor" name="competitor" required aria-label="Competitor"></select>
+              </div>
+              <div class="form-field">
+                <label for="run-stage">Stage</label>
+                <select id="run-stage" name="stage" required aria-label="Stage"></select>
+              </div>
+              <div class="form-field">
+                <label for="run-time">Timer time (seconds)</label>
+                <input id="run-time" name="seconds" type="number" min="0.01" max="99999" step="0.01" required placeholder="12.34">
+              </div>
+              <button class="button" id="add-run-button" type="submit">Add string</button>
+            </div>
+            <section class="stage-target-card" id="stage-target-card" aria-label="Stage target guide and hit or miss scorecard" hidden>
+              <p class="stage-guide-caption" id="stage-guide-caption"></p>
+              <div id="stage-illustration"></div>
+              <div class="target-grid" id="target-inputs"></div>
+            </section>
+          </form>
+          <p class="form-hint" id="run-status" aria-live="polite">Choose a competitor and stage to load its target guide.</p>
+          <div class="run-list" id="run-list" aria-live="polite">
+            <div class="empty">Choose a shooter and stage to see their strings here.</div>
+          </div>
+          <div class="notice">
+            Based on the 2027 handbook: each missed bang target adds 3 seconds, a missed stop target scores 30 seconds, and hitting Pop Quiz's penalty target adds 8 seconds. String scores are capped at 30 seconds. Once all 5 strings are scored, the shooter accepts the stage total. Each stage score is the sum of the fastest 4 strings out of 5.
+          </div>
+        </div>
+      </section>
+
+    </div>
+      <section class="panel" aria-label="Match totals and shooter summaries">
+        <div class="panel-body">
+          <section class="match-totals" id="match-totals" aria-label="Shooter match totals" hidden>
+            <h3 class="match-totals-heading">Shooter Match Totals</h3>
+            <div id="match-total-list" aria-live="polite"></div>
+          </section>
+          <section class="shooter-summaries" id="shooter-summaries" aria-label="Shooter summaries" hidden>
+            <h3 class="match-totals-heading">Shooter Summaries</h3>
+            <div class="summary-tabs" id="summary-tabs" role="tablist" aria-label="Select shooter summary"></div>
+            <div id="summary-panels"></div>
+          </section>
+        </div>
+      </section>
+    </section>
+
+    <section class="app-screen" id="stage-reference-screen" aria-labelledby="stage-reference-heading" hidden>
+      <section class="panel" aria-labelledby="stage-reference-heading">
+        <div class="panel-head">
+          <div>
+            <h2 id="stage-reference-heading">Stage Layout Reference</h2>
+            <div class="panel-caption">Choose a stage from the dropdown to view its target layout and measurements.</div>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="form-field stage-reference-selector">
+            <label for="stage-reference-select">Stage</label>
+            <select id="stage-reference-select"></select>
+          </div>
+          <p class="form-hint" id="stage-reference-caption"></p>
+          <p class="stage-guide-caption" id="stage-reference-diagram-caption"></p>
+          <div class="stage-reference-diagram" id="stage-reference-diagram"></div>
+          <div class="summary-table-wrap">
+            <table class="summary-table" id="stage-reference-table">
+              <thead>
+                <tr>
+                  <th scope="col">Target</th>
+                  <th scope="col">Lateral Position</th>
+                  <th scope="col">Downrange Distance</th>
+                  <th scope="col">Target Details</th>
+                </tr>
+              </thead>
+              <tbody id="stage-reference-rows"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <section class="app-screen" id="stats-screen" aria-labelledby="stats-heading" hidden>
+      <section class="panel" aria-labelledby="stats-heading">
+        <div class="panel-head">
+          <div>
+            <h2 id="stats-heading">Shooter Statistics</h2>
+            <div class="panel-caption">Choose a shooter, then filter results by match and stage.</div>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="member-form-grid">
+            <div class="form-field">
+              <label for="stats-shooter">Shooter</label>
+              <select id="stats-shooter"></select>
+            </div>
+            <div class="form-field">
+              <label for="stats-match">Match</label>
+              <select id="stats-match"></select>
+            </div>
+            <div class="form-field">
+              <label for="stats-stage">Stage</label>
+              <select id="stats-stage"></select>
+            </div>
+          </div>
+          <div id="stats-content" aria-live="polite"></div>
+        </div>
+      </section>
+    </section>
+
+    <section class="app-screen" id="schedule-screen" aria-labelledby="schedule-heading" hidden>
+      <section class="panel" aria-labelledby="schedule-heading">
+        <div class="panel-head">
+          <div>
+            <h2 id="schedule-heading">Team Schedule</h2>
+            <div class="panel-caption">Add and review events for the selected team.</div>
+          </div>
+        </div>
+        <div class="panel-body">
+          <form class="member-form" id="schedule-form">
+            <div class="member-form-grid">
+              <div class="form-field">
+                <label for="schedule-title">Event name</label>
+                <input id="schedule-title" name="title" maxlength="100" required placeholder="e.g. Saturday practice">
+              </div>
+              <div class="form-field">
+                <label for="schedule-date">Date</label>
+                <input id="schedule-date" name="date" type="date" required>
+              </div>
+              <div class="form-field">
+                <label for="schedule-time">Time (optional)</label>
+                <input id="schedule-time" name="time" type="time">
+              </div>
+              <div class="form-field">
+                <label for="schedule-location">Location (optional)</label>
+                <input id="schedule-location" name="location" maxlength="120" placeholder="Range or address">
+              </div>
+            </div>
+            <div class="form-field">
+              <label for="schedule-notes">Notes (optional)</label>
+              <input id="schedule-notes" name="notes" maxlength="500" placeholder="Equipment, arrival details, or reminders">
+            </div>
+            <div>
+              <button class="button" id="add-schedule-event-button" type="submit">Add to schedule</button>
+              <p class="match-setup-status" id="schedule-status" aria-live="polite"></p>
+            </div>
+          </form>
+          <div class="schedule-list" id="schedule-list" aria-live="polite"></div>
+        </div>
+      </section>
+    </section>
+
+    <div class="footer">Your data is saved in this browser on this device. It is not synced or backed up.</div>
+  </main>
+
+  <script>
+    (() => {
+      const STORAGE_KEY = "sasp-scoreboard-prototype-v1";
+      const stageDefinitions = {
+        Exclamation: {
+          layout: [
+            { id: "bang-1", x: -18, distance: 30 },
+            { id: "bang-2", x: -6, distance: 36 },
+            { id: "bang-3", x: 6, distance: 42 },
+            { id: "bang-4", x: 18, distance: 48 },
+            { id: "stop", x: 26, distance: 30 }
+          ],
+          targets: [
+            { id: "bang-1", kind: "bang", shape: "round", label: 'Bang 1 · 12" round · 5 ft to top' },
+            { id: "bang-2", kind: "bang", shape: "round", label: 'Bang 2 · 12" round · 4 ft to top' },
+            { id: "bang-3", kind: "bang", shape: "round", label: 'Bang 3 · 10" round · 3 ft to top' },
+            { id: "bang-4", kind: "bang", shape: "round", label: 'Bang 4 · 10" round · 3 ft to top' },
+            { id: "stop", kind: "stop", shape: "rectangle", label: 'Stop · 18 × 24" rectangle · 5 ft to top' }
+          ]
+        },
+        V: {
+          layout: [
+            { id: "bang-1", x: -8, distance: 54 },
+            { id: "bang-2", x: 8, distance: 54 },
+            { id: "bang-3", x: -6, distance: 36 },
+            { id: "bang-4", x: 6, distance: 36 },
+            { id: "stop", x: 0, distance: 30 }
+          ],
+          targets: [
+            { id: "bang-1", kind: "bang", shape: "round", label: 'Bang 1 · 10" round · 4 ft to top' },
+            { id: "bang-2", kind: "bang", shape: "round", label: 'Bang 2 · 10" round · 4 ft to top' },
+            { id: "bang-3", kind: "bang", shape: "round", label: 'Bang 3 · 12" round · 3 ft to top' },
+            { id: "bang-4", kind: "bang", shape: "round", label: 'Bang 4 · 12" round · 3 ft to top' },
+            { id: "stop", kind: "stop", shape: "round", label: 'Stop · 12" round · 5 ft to top' }
+          ]
+        },
+        "Go Fast": {
+          layout: [
+            { id: "bang-1", x: -12, distance: 45 },
+            { id: "bang-2", x: -4, distance: 45 },
+            { id: "stop", x: 0, distance: 36 },
+            { id: "bang-3", x: 4, distance: 45 },
+            { id: "bang-4", x: 12, distance: 45 }
+          ],
+          targets: [
+            { id: "bang-1", kind: "bang", shape: "rectangle", label: 'Bang 1 · 18 × 24" rectangle · 5 ft to top' },
+            { id: "bang-2", kind: "bang", shape: "rectangle", label: 'Bang 2 · 18 × 24" rectangle · 5 ft to top' },
+            { id: "stop", kind: "stop", shape: "round", label: 'Stop · 12" round · 5 ft to top' },
+            { id: "bang-3", kind: "bang", shape: "rectangle", label: 'Bang 3 · 18 × 24" rectangle · 5 ft to top' },
+            { id: "bang-4", kind: "bang", shape: "rectangle", label: 'Bang 4 · 18 × 24" rectangle · 5 ft to top' }
+          ]
+        },
+        Focus: {
+          layout: [
+            { id: "stop", x: -24, distance: 24 },
+            { id: "bang-1", x: -12, distance: 30 },
+            { id: "bang-2", x: 0, distance: 36 },
+            { id: "bang-3", x: 12, distance: 42 },
+            { id: "bang-4", x: 24, distance: 48 }
+          ],
+          targets: [
+            { id: "bang-1", kind: "bang", shape: "round", label: 'Bang 1 · 12" round · 5 ft to top' },
+            { id: "bang-2", kind: "bang", shape: "round", label: 'Bang 2 · 12" round · 5 ft to top' },
+            { id: "bang-3", kind: "bang", shape: "round", label: 'Bang 3 · 12" round · 5 ft to top' },
+            { id: "bang-4", kind: "bang", shape: "round", label: 'Bang 4 · 12" round · 5 ft to top' },
+            { id: "stop", kind: "stop", shape: "round", label: 'Stop · 12" round · 5 ft to top' }
+          ]
+        },
+        M: {
+          layout: [
+            { id: "stop", x: -9, distance: 45 },
+            { id: "bang-1", x: -4, distance: 45 },
+            { id: "bang-2", x: 1, distance: 47 },
+            { id: "bang-3", x: 6, distance: 47 },
+            { id: "bang-4", x: 11, distance: 43 }
+          ],
+          targets: [
+            { id: "bang-1", kind: "bang", shape: "round", label: 'Bang 1 · 12" round · 5 ft to top' },
+            { id: "bang-2", kind: "bang", shape: "round", label: 'Bang 2 · 12" round · 5 ft to top' },
+            { id: "bang-3", kind: "bang", shape: "round", label: 'Bang 3 · 12" round · 4 ft to top' },
+            { id: "bang-4", kind: "bang", shape: "round", label: 'Bang 4 · 12" round · 3 ft to top' },
+            { id: "stop", kind: "stop", shape: "round", label: 'Stop · 12" round · 3 ft to top' }
+          ]
+        },
+        "Speed Trap": {
+          layout: [
+            { id: "bang-1", x: 0, distance: 75 },
+            { id: "bang-2", x: -18, distance: 30 },
+            { id: "bang-3", x: -7, distance: 36 },
+            { id: "bang-4", x: 7, distance: 36 },
+            { id: "stop", x: 18, distance: 30 }
+          ],
+          targets: [
+            { id: "bang-1", kind: "bang", shape: "rectangle", label: 'Bang 1 · 18 × 24" rectangle · 5 ft to top' },
+            { id: "bang-2", kind: "bang", shape: "round", label: 'Bang 2 · 10" round · 5 ft to top' },
+            { id: "bang-3", kind: "bang", shape: "round", label: 'Bang 3 · 10" round · 5 ft to top' },
+            { id: "bang-4", kind: "bang", shape: "round", label: 'Bang 4 · 12" round · 5 ft to top' },
+            { id: "stop", kind: "stop", shape: "round", label: 'Stop · 12" round · 5 ft to top' }
+          ]
+        },
+        "In & Out": {
+          layout: [
+            { id: "bang-1", x: -10, distance: 54 },
+            { id: "bang-2", x: 10, distance: 54 },
+            { id: "bang-3", x: -12, distance: 24 },
+            { id: "bang-4", x: 0, distance: 24 },
+            { id: "stop", x: -3, distance: 39 }
+          ],
+          targets: [
+            { id: "bang-1", kind: "bang", shape: "round", label: 'Bang 1 · 12" round · 5 ft to top' },
+            { id: "bang-2", kind: "bang", shape: "round", label: 'Bang 2 · 12" round · 5 ft to top' },
+            { id: "bang-3", kind: "bang", shape: "round", label: 'Bang 3 · 10" round · 5 ft to top' },
+            { id: "bang-4", kind: "bang", shape: "round", label: 'Bang 4 · 10" round · 5 ft to top' },
+            { id: "stop", kind: "stop", shape: "round", label: 'Stop · 12" round · 5 ft to top' }
+          ]
+        },
+        "Pop Quiz": {
+          layout: [
+            { id: "bang-1", x: -2, distance: 40 },
+            { id: "bang-2", x: 2, distance: 40 },
+            { id: "penalty", x: 0, distance: 40 },
+            { id: "stop", x: 0, distance: 35 },
+            { id: "bang-3", x: -9, distance: 25 },
+            { id: "bang-4", x: 9, distance: 25 }
+          ],
+          targets: [
+            { id: "bang-1", kind: "bang", shape: "round", label: 'Bang 1 · 12" round · 5 ft to top' },
+            { id: "bang-2", kind: "bang", shape: "round", label: 'Bang 2 · 12" round · 5 ft to top' },
+            { id: "bang-3", kind: "bang", shape: "round", label: 'Bang 3 · 10" round · 5 ft to top' },
+            { id: "bang-4", kind: "bang", shape: "round", label: 'Bang 4 · 10" round · 5 ft to top' },
+            { id: "penalty", kind: "penalty", shape: "rectangle", label: 'Penalty · 18 × 24" rectangle' },
+            { id: "stop", kind: "stop", shape: "round", label: 'Stop · 12" round · 5 ft to top' }
+          ]
+        }
+      };
+      const stages = Object.keys(stageDefinitions);
+      const divisions = ["Rookie", "Intermediate", "Senior", "College", "Open"];
+      const divisionCategories = {
+        Rookie: [],
+        Intermediate: ["Entry Level", "Advanced"],
+        Senior: ["Junior Varsity", "Varsity"],
+        College: [],
+        Open: []
+      };
+      const firearmDisciplines = [
+        { value: "RFI", label: "RFI — Rimfire Iron Sight" },
+        { value: "RFO", label: "RFO — Rimfire Optic" },
+        { value: "CFI", label: "CFI — Centerfire Iron Sight" },
+        { value: "CFO", label: "CFO — Centerfire Optic" },
+        { value: "1911", label: "1911" },
+        { value: "Rimfire Revolver Iron Sight", label: "Rimfire Revolver Iron Sight" },
+        { value: "Ultimate", label: "Ultimate" },
+        { value: "PCC", label: "PCC — Pistol Caliber Carbine (sometimes written PPC)" }
+      ];
+      const starterState = {
+        teams: [],
+        activeTeamId: null,
+        competitors: [],
+        runs: [],
+        matches: [],
+        activeMatchId: null,
+        stageAcceptances: {},
+        schedule: []
+      };
+
+      function readState() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+          if (!saved || typeof saved !== "object") return { ...starterState };
+          const savedCompetitors = Array.isArray(saved.competitors) ? saved.competitors.filter(person =>
+            person && typeof person.id === "string" && typeof person.name === "string"
+          ) : [];
+          const teams = Array.isArray(saved.teams) ? saved.teams.filter(team =>
+            team && typeof team.id === "string" && typeof team.name === "string" && team.name.trim()
+          ).map(team => ({
+            id: team.id,
+            name: team.name.trim(),
+            archived: team.archived === true
+          })) : [];
+          const legacyTeamId = "legacy-team";
+          const hasLegacyData = typeof saved.teamName === "string" && saved.teamName.trim() ||
+            savedCompetitors.length > 0 || (Array.isArray(saved.runs) && saved.runs.length > 0) ||
+            (Array.isArray(saved.matches) && saved.matches.length > 0);
+          if (!teams.length && hasLegacyData) {
+            teams.push({
+              id: legacyTeamId,
+              name: typeof saved.teamName === "string" && saved.teamName.trim() ? saved.teamName.trim() : "Previous team"
+            });
+          }
+          const teamIds = new Set(teams.map(team => team.id));
+          const competitors = savedCompetitors.map(person => {
+            const parts = person.name.trim().split(/\s+/);
+            const firstName = typeof person.firstName === "string" ? person.firstName : parts[0] || "";
+            const lastName = typeof person.lastName === "string" ? person.lastName : parts.slice(1).join(" ");
+            const preferredName = typeof person.preferredName === "string" ? person.preferredName : "";
+            const teamId = teamIds.has(person.teamId) ? person.teamId : teams[0]?.id ?? null;
+            return {
+              ...person,
+              archived: person.archived === true,
+              firstName,
+              lastName,
+              preferredName,
+              grade: typeof person.grade === "string" ? person.grade : "",
+              graduationYear: /^\d{4}$/.test(person.graduationYear) ? person.graduationYear : "",
+              email: typeof person.email === "string" ? person.email : "",
+              phone: typeof person.phone === "string" ? person.phone : "",
+              guardianName: typeof person.guardianName === "string" ? person.guardianName : "",
+              guardianEmail: typeof person.guardianEmail === "string" ? person.guardianEmail : "",
+              guardianPhone: typeof person.guardianPhone === "string" ? person.guardianPhone : "",
+              teamId,
+              name: preferredName || [firstName, lastName].filter(Boolean).join(" ") || person.name
+            };
+          });
+          const savedRuns = Array.isArray(saved.runs) ? saved.runs.filter(run =>
+            run && typeof run.id === "string" && typeof run.competitorId === "string" &&
+            typeof run.stage === "string" && Number.isFinite(run.seconds) && run.seconds > 0
+          ) : [];
+          const matches = Array.isArray(saved.matches) ? saved.matches.filter(match =>
+            match && typeof match.id === "string" && typeof match.name === "string"
+          ).map(match => {
+            const competitorIds = Array.isArray(match.competitorIds)
+              ? [...new Set(match.competitorIds.filter(id => competitors.some(person => person.id === id)))]
+              : [];
+            const squads = [];
+            const assignedCompetitors = new Set();
+            if (Array.isArray(match.squads)) {
+              match.squads.forEach(squad => {
+                if (!Array.isArray(squad)) return;
+                const members = [];
+                squad.forEach(id => {
+                  if (members.length < 4 && competitorIds.includes(id) && !assignedCompetitors.has(id)) {
+                    members.push(id);
+                    assignedCompetitors.add(id);
+                  }
+                });
+                if (members.length) squads.push(members);
+              });
+            }
+            const unassignedCompetitors = competitorIds.filter(id => !assignedCompetitors.has(id));
+            while (unassignedCompetitors.length) squads.push(unassignedCompetitors.splice(0, 4));
+            const classifications = {};
+            if (match.classifications && typeof match.classifications === "object") {
+              competitorIds.forEach(id => {
+                const savedClassification = match.classifications[id];
+                if (!savedClassification || typeof savedClassification !== "object") return;
+                const division = divisions.includes(savedClassification.division)
+                  ? savedClassification.division
+                  : "";
+                const categories = divisionCategories[division] ?? [];
+                const category = categories.includes(savedClassification.category)
+                  ? savedClassification.category
+                  : "";
+                const firearm = firearmDisciplines.some(item => item.value === savedClassification.firearm)
+                  ? savedClassification.firearm
+                  : "";
+                classifications[id] = { division, category, firearm };
+              });
+            }
+            const inferredTeam = teams.find(team => competitorIds.some(id =>
+              competitors.some(person => person.id === id && person.teamId === team.id)
+            ));
+            return {
+              id: match.id,
+              name: match.name,
+              archived: match.archived === true,
+              startDate: typeof match.startDate === "string" ? match.startDate : "",
+              endDate: typeof match.endDate === "string" ? match.endDate : "",
+              location: typeof match.location === "string" ? match.location : "",
+              notes: typeof match.notes === "string" ? match.notes : "",
+              teamId: teamIds.has(match.teamId) ? match.teamId : inferredTeam?.id ?? teams[0]?.id ?? null,
+              stages: Array.isArray(match.stages) ? [...new Set(match.stages.filter(stage => stages.includes(stage)))] : [],
+              competitorIds,
+              squads,
+              classifications
+            };
+          }) : [];
+          const legacyMatchId = "legacy-match";
+          const hasLegacyMatch = matches.length === 0 && (
+            typeof saved.matchName === "string" && saved.matchName.trim() ||
+            competitors.length > 0 || savedRuns.length > 0
+          );
+          if (hasLegacyMatch) {
+            matches.push({
+              id: legacyMatchId,
+              name: typeof saved.matchName === "string" && saved.matchName.trim() ? saved.matchName.trim() : "Previous match",
+              teamId: teams[0]?.id ?? null,
+              startDate: "",
+              endDate: "",
+              location: "",
+              notes: "",
+              stages: [...stages],
+              competitorIds: competitors.map(person => person.id),
+              squads: Array.from(
+                { length: Math.ceil(competitors.length / 4) },
+                (_, index) => competitors.slice(index * 4, index * 4 + 4).map(person => person.id)
+              )
+            });
+          }
+          const matchIds = new Set(matches.map(match => match.id));
+          const preferredTeamId = teamIds.has(saved.activeTeamId)
+            ? saved.activeTeamId
+            : matches.find(match => match.id === saved.activeMatchId)?.teamId ?? teams[0]?.id ?? null;
+          const activeTeamId = teams.find(team => team.id === preferredTeamId && !team.archived)?.id ??
+            teams.find(team => !team.archived)?.id ?? null;
+          const teamMatches = matches.filter(match => match.teamId === activeTeamId);
+          const activeMatchId = teamMatches.some(match => match.id === saved.activeMatchId)
+            ? saved.activeMatchId
+            : teamMatches[0]?.id ?? null;
+          const runs = savedRuns.filter(run => matchIds.has(run.matchId || legacyMatchId)).map(run => ({
+            ...run,
+            matchId: run.matchId || legacyMatchId,
+            targetResults: run.targetResults && typeof run.targetResults === "object" ? run.targetResults : null
+          }));
+          const stageAcceptances = {};
+          if (saved.stageAcceptances && typeof saved.stageAcceptances === "object") {
+            Object.entries(saved.stageAcceptances).forEach(([key, accepted]) => {
+              const parts = key.split("\u0000");
+              if (parts.length === 3 && matchIds.has(parts[0]) && accepted === true) {
+                stageAcceptances[key] = true;
+              } else if (parts.length === 2 && hasLegacyMatch && accepted === true) {
+                stageAcceptances[`${legacyMatchId}\u0000${parts[0]}\u0000${parts[1]}`] = true;
+              }
+            });
+          }
+          const schedule = Array.isArray(saved.schedule) ? saved.schedule.filter(event =>
+            event && typeof event.id === "string" && teamIds.has(event.teamId) &&
+            typeof event.title === "string" && typeof event.date === "string" &&
+            /^\d{4}-\d{2}-\d{2}$/.test(event.date)
+          ).map(event => ({
+            id: event.id,
+            teamId: event.teamId,
+            title: event.title.trim(),
+            date: event.date,
+            time: typeof event.time === "string" ? event.time : "",
+            location: typeof event.location === "string" ? event.location : "",
+            notes: typeof event.notes === "string" ? event.notes : ""
+          })) : [];
+          return {
+            teams,
+            activeTeamId,
+            competitors,
+            runs,
+            matches,
+            activeMatchId,
+            stageAcceptances,
+            schedule
+          };
+        } catch (error) {
+          console.error("Could not read the saved scoreboard data.", error);
+          return { ...starterState };
+        }
+      }
+
+      let state = readState();
+      const teamSelect = document.querySelector("#team-select");
+      const matchName = document.querySelector("#match-name");
+      const newTeamName = document.querySelector("#new-team-name");
+      const newMatchName = document.querySelector("#new-match-name");
+      const matchStageOptions = document.querySelector("#match-stage-options");
+      const matchShooterOptions = document.querySelector("#match-shooter-options");
+      const matchSquadOptions = document.querySelector("#match-squad-options");
+      const addMatchSquadButton = document.querySelector("#add-match-squad");
+      const matchSetupStatus = document.querySelector("#match-setup-status");
+      const saveMatchButton = document.querySelector("#save-match-button");
+      const cancelMatchEditButton = document.querySelector("#cancel-match-edit");
+      const newMatchStartDate = document.querySelector("#new-match-start-date");
+      const newMatchEndDate = document.querySelector("#new-match-end-date");
+      const newMatchLocation = document.querySelector("#new-match-location");
+      const newMatchNotes = document.querySelector("#new-match-notes");
+      const matchEventList = document.querySelector("#match-event-list");
+      const memberGraduationYear = document.querySelector("#member-graduation-year");
+      const competitorSelect = document.querySelector("#run-competitor");
+      const runStage = document.querySelector("#run-stage");
+      const runTime = document.querySelector("#run-time");
+      const rosterList = document.querySelector("#roster-list");
+      const archivedTeamList = document.querySelector("#archived-team-list");
+      const archivedMemberList = document.querySelector("#archived-member-list");
+      const archiveTeamButton = document.querySelector("#archive-team-button");
+      const runList = document.querySelector("#run-list");
+      const addRunButton = document.querySelector("#add-run-button");
+      const runStatus = document.querySelector("#run-status");
+      const stageTargetCard = document.querySelector("#stage-target-card");
+      const stageGuideCaption = document.querySelector("#stage-guide-caption");
+      const stageIllustration = document.querySelector("#stage-illustration");
+      const targetInputs = document.querySelector("#target-inputs");
+      const matchTotals = document.querySelector("#match-totals");
+      const matchTotalList = document.querySelector("#match-total-list");
+      const shooterSummaries = document.querySelector("#shooter-summaries");
+      const summaryTabs = document.querySelector("#summary-tabs");
+      const summaryPanels = document.querySelector("#summary-panels");
+      const memberSetupStatus = document.querySelector("#member-setup-status");
+      const teamScreen = document.querySelector("#team-screen");
+      const matchScreen = document.querySelector("#match-screen");
+      const scoringScreen = document.querySelector("#scoring-screen");
+      const stageReferenceScreen = document.querySelector("#stage-reference-screen");
+      const statsScreen = document.querySelector("#stats-screen");
+      const teamScreenButton = document.querySelector("#team-screen-button");
+      const matchScreenButton = document.querySelector("#match-screen-button");
+      const scoringScreenButton = document.querySelector("#scoring-screen-button");
+      const stageReferenceScreenButton = document.querySelector("#stage-reference-screen-button");
+      const stageReferenceSelect = document.querySelector("#stage-reference-select");
+      const stageReferenceCaption = document.querySelector("#stage-reference-caption");
+      const stageReferenceDiagramCaption = document.querySelector("#stage-reference-diagram-caption");
+      const stageReferenceDiagram = document.querySelector("#stage-reference-diagram");
+      const stageReferenceRows = document.querySelector("#stage-reference-rows");
+      const selectedEventDetails = document.querySelector("#selected-event-details");
+      const statsScreenButton = document.querySelector("#stats-screen-button");
+      const scheduleScreen = document.querySelector("#schedule-screen");
+      const scheduleScreenButton = document.querySelector("#schedule-screen-button");
+      const welcomeScreen = document.querySelector("#welcome-screen");
+      const screenNav = document.querySelector(".screen-nav");
+      const welcomeCreateTeamButton = document.querySelector("#welcome-create-team");
+      const statsShooterSelect = document.querySelector("#stats-shooter");
+      const statsMatchSelect = document.querySelector("#stats-match");
+      const statsStageSelect = document.querySelector("#stats-stage");
+      const statsContent = document.querySelector("#stats-content");
+      const scheduleList = document.querySelector("#schedule-list");
+      const scheduleStatus = document.querySelector("#schedule-status");
+      const pageEyebrow = document.querySelector("#page-eyebrow");
+      const pageTitle = document.querySelector("#page-title");
+      const pageSubtitle = document.querySelector("#page-subtitle");
+      let activeScreen = state.teams.length ? "setup" : "team";
+      let selectedSummaryCompetitorId = null;
+      let editingMatchId = null;
+      let matchSquadAssignments = new Map();
+      let matchClassificationAssignments = new Map();
+      let matchSquadCount = 0;
+
+      for (let year = 2027; year <= 2046; year += 1) {
+        const option = document.createElement("option");
+        option.value = String(year);
+        option.textContent = String(year);
+        memberGraduationYear.append(option);
+      }
+      stages.forEach(stage => {
+        const option = document.createElement("option");
+        option.value = stage;
+        option.textContent = stage;
+        stageReferenceSelect.append(option);
+      });
+
+      function showScreen(screen) {
+        activeScreen = screen;
+        if (screen === "welcome") {
+          welcomeScreen.hidden = false;
+          screenNav.hidden = true;
+          teamScreen.hidden = true;
+          matchScreen.hidden = true;
+          scoringScreen.hidden = true;
+          stageReferenceScreen.hidden = true;
+          statsScreen.hidden = true;
+          scheduleScreen.hidden = true;
+          pageEyebrow.textContent = "Welcome";
+          pageTitle.textContent = "Get Your Team Started.";
+          pageSubtitle.textContent = "Create a team to start organizing members, matches, stats, and schedules.";
+          return;
+        }
+        welcomeScreen.hidden = true;
+        screenNav.hidden = false;
+        const isTeamScreen = screen === "team";
+        const isMatchScreen = screen === "setup";
+        const isScoringScreen = screen === "scoring";
+        const isStageReferenceScreen = screen === "stage-reference";
+        const isStatsScreen = screen === "stats";
+        teamScreen.hidden = screen !== "team";
+        matchScreen.hidden = !isMatchScreen;
+        scoringScreen.hidden = !isScoringScreen;
+        stageReferenceScreen.hidden = !isStageReferenceScreen;
+        statsScreen.hidden = !isStatsScreen;
+        scheduleScreen.hidden = screen !== "schedule";
+        teamScreenButton.setAttribute("aria-current", isTeamScreen ? "page" : "false");
+        matchScreenButton.setAttribute("aria-current", isMatchScreen ? "page" : "false");
+        scoringScreenButton.setAttribute("aria-current", isScoringScreen ? "page" : "false");
+        stageReferenceScreenButton.setAttribute("aria-current", isStageReferenceScreen ? "page" : "false");
+        statsScreenButton.setAttribute("aria-current", isStatsScreen ? "page" : "false");
+        scheduleScreenButton.setAttribute("aria-current", screen === "schedule" ? "page" : "false");
+        pageEyebrow.textContent = isTeamScreen
+          ? "Team Management"
+          : isMatchScreen ? "Event Planning" : isScoringScreen ? "Match Day" : isStageReferenceScreen ? "Stage Layout" : isStatsScreen ? "Shooter Performance" : "Team Calendar";
+        pageTitle.textContent = isTeamScreen
+          ? "Set Up Your Team."
+          : isMatchScreen ? "Set Up An Event." : isScoringScreen ? "Ready To Score." : isStageReferenceScreen ? "Stage Layout Reference." : isStatsScreen ? "Review Shooter Stats." : "Plan The Season.";
+        pageSubtitle.textContent = isTeamScreen
+          ? "Manage team details and members in one place."
+          : isMatchScreen
+            ? "Create events ahead of time; score them on the day."
+            : isScoringScreen
+              ? "Select a saved event to record strings and review scores."
+              : isStageReferenceScreen
+                ? "Review each stage's target placement and plate details."
+                : isStatsScreen
+                  ? "Break down results by shooter, match, and stage."
+                  : "Keep team practices and events together.";
+      }
+
+      function getScoredRun(run) {
+        const definition = stageDefinitions[run.stage];
+        if (!definition || !run.targetResults) return null;
+        if (!definition.targets.every(target => {
+          const result = getTargetResult(run, target.id);
+          return result === "hit" || result === "miss";
+        })) return null;
+
+        const stopHit = getTargetResult(run, "stop") === "hit";
+        if (!stopHit) return { seconds: 30, rawSeconds: run.seconds, penaltySeconds: null, stopMissed: true };
+
+        const missedBangTargets = definition.targets.filter(target =>
+          target.kind === "bang" && getTargetResult(run, target.id) === "miss"
+        ).length;
+        const penaltyHits = definition.targets.filter(target =>
+          target.kind === "penalty" && getTargetResult(run, target.id) === "hit"
+        ).length;
+        const penaltySeconds = missedBangTargets * 3 + penaltyHits * 8;
+        return {
+          seconds: Math.min(30, run.seconds + penaltySeconds),
+          rawSeconds: run.seconds,
+          penaltySeconds,
+          missedBangTargets,
+          penaltyHits,
+          stopMissed: false
+        };
+      }
+
+      function renderStageGuide(stageName, options = {}) {
+        const {
+          diagramContainer = stageIllustration,
+          captionElement = stageGuideCaption,
+          updateScoringCard = true
+        } = options;
+        const definition = stageDefinitions[stageName];
+        if (updateScoringCard) {
+          stageTargetCard.hidden = !definition;
+          targetInputs.replaceChildren();
+        }
+        diagramContainer.replaceChildren();
+        if (!definition) return;
+
+        captionElement.textContent = `${stageName} · approximate top-down layout, shown at a reduced size with enlarged targets. Confirm target positions on the range.`;
+        const svgNamespace = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(svgNamespace, "svg");
+        svg.classList.add("stage-guide");
+        const pixelsPerFoot = 8;
+        const maxDistance = Math.max(...definition.layout.map(position => position.distance));
+        const firingY = Math.max(330, maxDistance * pixelsPerFoot + 60);
+        const viewHeight = firingY + 60;
+        svg.setAttribute("viewBox", `0 0 720 ${viewHeight}`);
+        svg.setAttribute("role", "img");
+        svg.setAttribute("aria-label", `${stageName} approximate top-down range layout with proportional distances and plate sizes, showing ${definition.targets.length} targets`);
+
+        function addSvgElement(tagName, attributes, text) {
+          const element = document.createElementNS(svgNamespace, tagName);
+          Object.entries(attributes).forEach(([name, value]) => element.setAttribute(name, String(value)));
+          if (text) element.textContent = text;
+          svg.append(element);
+          return element;
+        }
+
+        addSvgElement("text", {
+          x: 360, y: 22, "text-anchor": "middle", fill: "#849087",
+          "font-size": 10, "font-family": "system-ui, sans-serif"
+        }, "DOWNRANGE");
+
+        const firingX = 360;
+        const plotTargets = definition.layout.map(position => {
+          const target = definition.targets.find(candidate => candidate.id === position.id);
+          return { ...position, target, x: firingX + position.x * pixelsPerFoot, y: firingY - position.distance * pixelsPerFoot };
+        }).filter(position => position.target);
+
+        plotTargets.forEach(position => {
+          const roundDimensions = position.target.label.match(/(\d+)" round/);
+          const rectangleDimensions = position.target.label.match(/(\d+) × (\d+)" rectangle/);
+          const plateWidth = (roundDimensions
+            ? Number(roundDimensions[1]) * pixelsPerFoot / 12
+            : rectangleDimensions
+              ? Number(rectangleDimensions[1]) * pixelsPerFoot / 12
+              : 12) * 1.05 * 1.1 / 0.8 * 1.35 * 1.75;
+          const plateHeight = (roundDimensions
+            ? plateWidth
+            : rectangleDimensions
+              ? Number(rectangleDimensions[2]) * pixelsPerFoot / 12
+              : 12) * 1.05 * 1.1 / 0.8 * 1.35 * 1.75;
+          position.plateWidth = plateWidth;
+          position.plateHeight = plateHeight;
+          addSvgElement("line", {
+            x1: firingX, y1: firingY - 3, x2: position.x, y2: position.y + plateHeight / 2,
+            stroke: "#aeb9aa", "stroke-width": 1.2, "stroke-dasharray": "4 5"
+          });
+          const labelX = (firingX + position.x) / 2 + (position.x < firingX ? -11 : 11);
+          const labelY = (firingY + position.y) / 2 - 4;
+          addSvgElement("text", {
+            x: labelX, y: labelY, "text-anchor": "middle", fill: "#65736b",
+            "font-size": 10, "font-family": "system-ui, sans-serif",
+            stroke: "#f7f9f4", "stroke-width": 3, "paint-order": "stroke"
+          }, `${position.distance} ft`);
+        });
+
+        addSvgElement("line", {
+          x1: 110, y1: firingY, x2: 610, y2: firingY,
+          stroke: "#748270", "stroke-width": 2
+        });
+        addSvgElement("circle", {
+          cx: firingX, cy: firingY - 7, r: 6, fill: "#17392e"
+        });
+        addSvgElement("text", {
+          x: firingX, y: firingY + 18, "text-anchor": "middle", fill: "#52634f",
+          "font-size": 10, "font-family": "system-ui, sans-serif"
+        }, "FIRING LINE");
+        addSvgElement("rect", {
+          x: firingX - 19, y: firingY + 26, width: 38, height: 14, rx: 2,
+          fill: "#d6b37b", stroke: "#8b704a", "stroke-width": 1.5
+        });
+        addSvgElement("text", {
+          x: firingX, y: firingY + 54, "text-anchor": "middle", fill: "#65736b",
+          "font-size": 9, "font-family": "system-ui, sans-serif"
+        }, "TABLE / START");
+        const scaleBarX = 120;
+        const scaleBarY = firingY - 24;
+        const scaleBarLength = 10 * pixelsPerFoot;
+        addSvgElement("line", {
+          x1: scaleBarX, y1: scaleBarY, x2: scaleBarX + scaleBarLength, y2: scaleBarY,
+          stroke: "#52634f", "stroke-width": 2
+        });
+        [scaleBarX, scaleBarX + scaleBarLength].forEach(x => {
+          addSvgElement("line", {
+            x1: x, y1: scaleBarY - 4, x2: x, y2: scaleBarY + 4,
+            stroke: "#52634f", "stroke-width": 1.5
+          });
+        });
+        addSvgElement("text", {
+          x: scaleBarX + scaleBarLength / 2, y: scaleBarY - 6, "text-anchor": "middle", fill: "#52634f",
+          "font-size": 9, "font-family": "system-ui, sans-serif"
+        }, "10 ft");
+
+        plotTargets.forEach(position => {
+          const { target, x, y } = position;
+          const group = document.createElementNS(svgNamespace, "g");
+          group.setAttribute("aria-hidden", "true");
+          const fill = target.kind === "penalty" ? "#d5ec76" : "#fff";
+          const stroke = target.kind === "stop" ? "#a43f36" : "#375640";
+          let plate;
+          if (target.shape === "rectangle") {
+            plate = document.createElementNS(svgNamespace, "rect");
+            plate.setAttribute("x", String(x - position.plateWidth / 2));
+            plate.setAttribute("y", String(y - position.plateHeight / 2));
+            plate.setAttribute("width", String(position.plateWidth));
+            plate.setAttribute("height", String(position.plateHeight));
+            plate.setAttribute("rx", "3");
+          } else {
+            plate = document.createElementNS(svgNamespace, "circle");
+            plate.setAttribute("cx", String(x));
+            plate.setAttribute("cy", String(y));
+            plate.setAttribute("r", String(position.plateWidth / 2));
+          }
+          plate.setAttribute("fill", fill);
+          plate.setAttribute("stroke", stroke);
+          plate.setAttribute("stroke-width", "2.5");
+          group.append(plate);
+
+          const targetLabel = document.createElementNS(svgNamespace, "text");
+          targetLabel.setAttribute("x", String(x));
+          targetLabel.setAttribute("y", String(y + position.plateHeight / 2 + 12));
+          targetLabel.setAttribute("text-anchor", "middle");
+          targetLabel.setAttribute("fill", "#52634f");
+          targetLabel.setAttribute("font-size", "10");
+          targetLabel.setAttribute("font-family", "system-ui, sans-serif");
+          targetLabel.textContent = target.kind === "stop" ? "STOP" : target.kind === "penalty" ? "PENALTY" : `B${target.id.slice(-1)}`;
+          group.append(targetLabel);
+          svg.append(group);
+        });
+        diagramContainer.append(svg);
+        if (!updateScoringCard) return;
+
+        definition.targets.forEach(target => {
+          const fieldset = document.createElement("fieldset");
+          fieldset.className = "target-check";
+          const legend = document.createElement("legend");
+          legend.textContent = target.label;
+          fieldset.append(legend);
+          const options = document.createElement("div");
+          options.className = "target-options";
+          ["hit", "miss"].forEach(result => {
+            const label = document.createElement("label");
+            label.className = `target-option${result === "miss" ? " miss" : ""}`;
+            const input = document.createElement("input");
+            input.type = "radio";
+            input.name = `target-${target.id}`;
+            input.value = result;
+            input.required = true;
+            const text = document.createElement("span");
+            text.textContent = result === "hit" ? "Hit" : "Miss";
+            label.append(input, text);
+            options.append(label);
+          });
+          const resultRow = document.createElement("div");
+          resultRow.className = "target-result-row";
+          resultRow.append(options);
+          const attemptsField = document.createElement("div");
+          attemptsField.className = "attempts-field";
+          const attemptsLabel = document.createElement("label");
+          attemptsLabel.htmlFor = `attempts-${target.id}`;
+          attemptsLabel.textContent = "Shot attempts";
+          const attemptsInput = document.createElement("input");
+          attemptsInput.id = `attempts-${target.id}`;
+          attemptsInput.name = `attempts-${target.id}`;
+          attemptsInput.type = "number";
+          attemptsInput.min = "0";
+          attemptsInput.step = "1";
+          attemptsInput.value = "1";
+          attemptsInput.required = true;
+          attemptsInput.inputMode = "numeric";
+          attemptsField.append(attemptsLabel, attemptsInput);
+          resultRow.append(attemptsField);
+          fieldset.append(resultRow);
+          targetInputs.append(fieldset);
+        });
+      }
+
+      function saveState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (error) {
+          console.error("Could not save scoreboard data in this browser.", error);
+          window.alert("Your changes could not be saved in this browser. Check available storage and try again.");
+        }
+      }
+
+      function initials(name) {
+        return name.trim().split(/\s+/).slice(0, 2).map(part => part.charAt(0).toUpperCase()).join("") || "?";
+      }
+
+      function formatTime(seconds) {
+        return `${seconds.toFixed(2)} s`;
+      }
+
+      function getTargetResult(run, targetId) {
+        const outcome = run.targetResults?.[targetId];
+        return typeof outcome === "string" ? outcome : outcome?.result;
+      }
+
+      function getStageRuns(competitorId, stage) {
+        return state.runs.filter(run =>
+          run.matchId === state.activeMatchId && run.competitorId === competitorId && run.stage === stage
+        );
+      }
+
+      function getStageKey(competitorId, stage) {
+        return `${state.activeMatchId}\u0000${competitorId}\u0000${stage}`;
+      }
+
+      function getActiveMatch() {
+        return state.matches.find(match => match.id === state.activeMatchId) ?? null;
+      }
+
+      function getActiveCompetitors() {
+        const match = getActiveMatch();
+        return match ? state.competitors.filter(person =>
+          person.teamId === match.teamId && match.competitorIds.includes(person.id)
+        ) : [];
+      }
+
+      function getActiveTeamCompetitors() {
+        return state.competitors.filter(person =>
+          person.teamId === state.activeTeamId && !person.archived
+        );
+      }
+
+      function renderMatchSetupOptions() {
+        const hasStageOptions = matchStageOptions.querySelectorAll('input[name="match-stages"]').length > 0;
+        const hasShooterOptions = matchShooterOptions.querySelectorAll('input[name="match-shooters"]').length > 0;
+        const selectedStages = new Set([...matchStageOptions.querySelectorAll("input:checked")].map(input => input.value));
+        const selectedShooters = new Set([...matchShooterOptions.querySelectorAll("input:checked")].map(input => input.value));
+        matchStageOptions.replaceChildren();
+        matchShooterOptions.replaceChildren();
+        stages.forEach(stage => {
+          const label = document.createElement("label");
+          label.className = "selection-option";
+          const input = document.createElement("input");
+          input.type = "checkbox";
+          input.name = "match-stages";
+          input.value = stage;
+          input.checked = hasStageOptions ? selectedStages.has(stage) : true;
+          const text = document.createElement("span");
+          text.textContent = stage;
+          label.append(input, text);
+          matchStageOptions.append(label);
+        });
+        const editingMatch = state.matches.find(match => match.id === editingMatchId);
+        const teamCompetitors = [
+          ...getActiveTeamCompetitors(),
+          ...state.competitors.filter(person =>
+            person.teamId === state.activeTeamId &&
+            person.archived &&
+            editingMatch?.competitorIds.includes(person.id)
+          )
+        ];
+        if (!state.activeTeamId || !teamCompetitors.length) {
+          const message = document.createElement("span");
+          message.className = "form-hint";
+          message.textContent = state.activeTeamId
+            ? "Add team members before creating a match."
+            : "Create or select a team first.";
+          matchShooterOptions.append(message);
+          renderMatchSquadOptions();
+          return;
+        }
+        teamCompetitors.forEach(person => {
+          const label = document.createElement("label");
+          label.className = "selection-option";
+          const input = document.createElement("input");
+          input.type = "checkbox";
+          input.name = "match-shooters";
+          input.value = person.id;
+          input.checked = hasShooterOptions
+            ? selectedShooters.has(person.id)
+            : !person.archived;
+          const text = document.createElement("span");
+          text.textContent = person.archived ? `${person.name} (archived)` : person.name;
+          label.append(input, text);
+          matchShooterOptions.append(label);
+        });
+        renderMatchSquadOptions();
+      }
+
+      function selectedMatchShooterIds() {
+        return [...matchShooterOptions.querySelectorAll('input[name="match-shooters"]:checked')]
+          .map(input => input.value);
+      }
+
+      function reconcileMatchSquadAssignments(competitorIds) {
+        const selectedIds = new Set(competitorIds);
+        [...matchSquadAssignments.keys()].forEach(id => {
+          if (!selectedIds.has(id)) {
+            matchSquadAssignments.delete(id);
+            matchClassificationAssignments.delete(id);
+          }
+        });
+        matchSquadCount = Math.max(matchSquadCount, Math.ceil(competitorIds.length / 4));
+        competitorIds.forEach(id => {
+          if (matchSquadAssignments.has(id)) return;
+          let squadNumber = 1;
+          while (squadNumber <= matchSquadCount) {
+            const squadSize = [...matchSquadAssignments.values()]
+              .filter(value => value === squadNumber).length;
+            if (squadSize < 4) break;
+            squadNumber += 1;
+          }
+          if (squadNumber > matchSquadCount) matchSquadCount = squadNumber;
+          matchSquadAssignments.set(id, squadNumber);
+        });
+        if (!competitorIds.length && !editingMatchId) matchSquadCount = 0;
+      }
+
+      function renderMatchSquadOptions() {
+        const selectedIds = selectedMatchShooterIds();
+        reconcileMatchSquadAssignments(selectedIds);
+        matchSquadOptions.replaceChildren();
+        addMatchSquadButton.disabled = !selectedIds.length;
+        if (!selectedIds.length) {
+          const empty = document.createElement("span");
+          empty.className = "form-hint";
+          empty.textContent = "Select participating team members to assign them to squads.";
+          matchSquadOptions.append(empty);
+          return;
+        }
+        const squadSizes = new Map();
+        matchSquadAssignments.forEach(squadNumber => {
+          squadSizes.set(squadNumber, (squadSizes.get(squadNumber) ?? 0) + 1);
+        });
+        selectedIds.forEach(id => {
+          const person = state.competitors.find(candidate => candidate.id === id);
+          if (!person) return;
+          const row = document.createElement("div");
+          row.className = "squad-assignment-row";
+          const name = document.createElement("span");
+          name.className = "squad-shooter-name";
+          name.textContent = person.name;
+          const squadSelect = document.createElement("select");
+          squadSelect.setAttribute("aria-label", `Squad for ${person.name}`);
+          squadSelect.dataset.competitorId = person.id;
+          const assignedSquad = matchSquadAssignments.get(id);
+          for (let squadNumber = 1; squadNumber <= matchSquadCount; squadNumber += 1) {
+            const option = document.createElement("option");
+            option.value = String(squadNumber);
+            option.textContent = `Squad ${squadNumber}`;
+            option.disabled = squadNumber !== assignedSquad && (squadSizes.get(squadNumber) ?? 0) >= 4;
+            squadSelect.append(option);
+          }
+          squadSelect.value = String(assignedSquad);
+          squadSelect.addEventListener("change", () => {
+            matchSquadAssignments.set(id, Number(squadSelect.value));
+            renderMatchSquadOptions();
+          });
+
+          const classification = matchClassificationAssignments.get(id) ?? {
+            division: "",
+            category: "",
+            firearm: ""
+          };
+          matchClassificationAssignments.set(id, classification);
+          const divisionSelect = document.createElement("select");
+          divisionSelect.setAttribute("aria-label", `Division for ${person.name}`);
+          divisionSelect.dataset.classification = "division";
+          divisionSelect.dataset.competitorId = id;
+          const divisionPlaceholder = document.createElement("option");
+          divisionPlaceholder.value = "";
+          divisionPlaceholder.textContent = "Choose division";
+          divisionSelect.append(divisionPlaceholder);
+          divisions.forEach(division => {
+            const option = document.createElement("option");
+            option.value = division;
+            option.textContent = division;
+            divisionSelect.append(option);
+          });
+          divisionSelect.value = classification.division;
+          divisionSelect.addEventListener("change", () => {
+            classification.division = divisionSelect.value;
+            classification.category = "";
+            renderMatchSquadOptions();
+          });
+
+          const categorySelect = document.createElement("select");
+          categorySelect.setAttribute("aria-label", `Category for ${person.name}`);
+          categorySelect.dataset.classification = "category";
+          categorySelect.dataset.competitorId = id;
+          const categories = divisionCategories[classification.division] ?? [];
+          const categoryPlaceholder = document.createElement("option");
+          categoryPlaceholder.value = "";
+          categoryPlaceholder.textContent = !classification.division
+            ? "Choose division first"
+            : categories.length ? "Choose category" : "No category";
+          categorySelect.append(categoryPlaceholder);
+          categories.forEach(category => {
+            const option = document.createElement("option");
+            option.value = category;
+            option.textContent = category;
+            categorySelect.append(option);
+          });
+          categorySelect.value = classification.category;
+          categorySelect.disabled = !classification.division || !categories.length;
+          categorySelect.addEventListener("change", () => {
+            classification.category = categorySelect.value;
+            matchClassificationAssignments.set(id, classification);
+          });
+
+          const firearmSelect = document.createElement("select");
+          firearmSelect.setAttribute("aria-label", `Firearm discipline for ${person.name}`);
+          firearmSelect.dataset.classification = "firearm";
+          firearmSelect.dataset.competitorId = id;
+          const firearmPlaceholder = document.createElement("option");
+          firearmPlaceholder.value = "";
+          firearmPlaceholder.textContent = "Choose firearm";
+          firearmSelect.append(firearmPlaceholder);
+          firearmDisciplines.forEach(discipline => {
+            const option = document.createElement("option");
+            option.value = discipline.value;
+            option.textContent = discipline.label;
+            firearmSelect.append(option);
+          });
+          firearmSelect.value = classification.firearm;
+          firearmSelect.addEventListener("change", () => {
+            classification.firearm = firearmSelect.value;
+          });
+          const labeledFields = [
+            ["Squad", squadSelect, "squad"],
+            ["Division", divisionSelect, "division"],
+            ["Category", categorySelect, "category"],
+            ["Firearm discipline", firearmSelect, "firearm"]
+          ].map(([labelText, select, fieldName]) => {
+            const field = document.createElement("div");
+            field.className = "squad-field";
+            select.id = `squad-${fieldName}-${id}`;
+            const label = document.createElement("label");
+            label.htmlFor = select.id;
+            label.textContent = labelText;
+            field.append(label, select);
+            return field;
+          });
+          row.append(name, ...labeledFields);
+          matchSquadOptions.append(row);
+        });
+      }
+
+      function selectedMatchSquads() {
+        const squads = Array.from({ length: matchSquadCount }, () => []);
+        selectedMatchShooterIds().forEach(id => {
+          const squadNumber = matchSquadAssignments.get(id);
+          if (squadNumber && squads[squadNumber - 1]) squads[squadNumber - 1].push(id);
+        });
+        return squads.filter(squad => squad.length);
+      }
+
+      function selectedMatchClassifications() {
+        const classifications = {};
+        selectedMatchShooterIds().forEach(id => {
+          const classification = matchClassificationAssignments.get(id);
+          if (classification) classifications[id] = { ...classification };
+        });
+        return classifications;
+      }
+
+      function getShooterClassificationLabel(match, competitorId) {
+        const classification = match.classifications?.[competitorId];
+        if (!classification) return "";
+        return [
+          classification.division,
+          classification.category,
+          classification.firearm
+        ].filter(Boolean).join(" · ");
+      }
+
+      function getStageScore(competitorId, stage) {
+        const scoredRuns = getStageRuns(competitorId, stage)
+          .map(run => ({ run, scored: getScoredRun(run) }))
+          .filter(entry => entry.scored)
+          .sort((a, b) => a.scored.seconds - b.scored.seconds);
+        return {
+          runs: scoredRuns,
+          score: scoredRuns.slice(0, 4).reduce((total, entry) => total + entry.scored.seconds, 0),
+          complete: scoredRuns.length === 5
+        };
+      }
+
+      function getShooterMetrics(competitorId) {
+        const metrics = { shots: 0, hits: 0, misses: 0, unknownAttempts: 0, scoredTime: 0, scoredStrings: 0 };
+        state.runs.filter(run => run.matchId === state.activeMatchId && run.competitorId === competitorId).forEach(run => {
+          const scored = getScoredRun(run);
+          if (scored) {
+            metrics.scoredTime += scored.seconds;
+            metrics.scoredStrings += 1;
+          }
+          if (!run.targetResults || !stageDefinitions[run.stage]) return;
+          stageDefinitions[run.stage].targets.forEach(target => {
+            const result = getTargetResult(run, target.id);
+            if (result === "hit") metrics.hits += 1;
+            else if (result === "miss") metrics.misses += 1;
+            else return;
+            const outcome = run.targetResults[target.id];
+            if (typeof outcome === "object" && Number.isInteger(outcome.attempts) && outcome.attempts >= 0) {
+              metrics.shots += outcome.attempts;
+            } else {
+              metrics.unknownAttempts += 1;
+            }
+          });
+        });
+        return metrics;
+      }
+
+      function renderStatsScreen() {
+        const previousShooterId = statsShooterSelect.value;
+        const previousMatchId = statsMatchSelect.value;
+        const previousStage = statsStageSelect.value;
+        const teamMembers = state.competitors.filter(person => person.teamId === state.activeTeamId);
+        const teamMatches = state.matches.filter(match => match.teamId === state.activeTeamId);
+
+        statsShooterSelect.replaceChildren();
+        const shooterPlaceholder = document.createElement("option");
+        shooterPlaceholder.value = "";
+        shooterPlaceholder.textContent = teamMembers.length ? "Choose shooter" : "No team members";
+        statsShooterSelect.append(shooterPlaceholder);
+        teamMembers.forEach(person => {
+          const option = document.createElement("option");
+          option.value = person.id;
+          option.textContent = person.archived ? `${person.name} (archived)` : person.name;
+          statsShooterSelect.append(option);
+        });
+        statsShooterSelect.disabled = !teamMembers.length;
+        if (teamMembers.some(person => person.id === previousShooterId)) {
+          statsShooterSelect.value = previousShooterId;
+        } else if (teamMembers.length) {
+          statsShooterSelect.value = teamMembers[0].id;
+        }
+
+        statsMatchSelect.replaceChildren();
+        const allMatchesOption = document.createElement("option");
+        allMatchesOption.value = "all";
+        allMatchesOption.textContent = "All matches";
+        statsMatchSelect.append(allMatchesOption);
+        const shooterMatches = teamMatches.filter(match => match.competitorIds.includes(statsShooterSelect.value));
+        shooterMatches.forEach(match => {
+          const option = document.createElement("option");
+          option.value = match.id;
+          option.textContent = match.name;
+          statsMatchSelect.append(option);
+        });
+        statsMatchSelect.disabled = !shooterMatches.length;
+        statsMatchSelect.value = shooterMatches.some(match => match.id === previousMatchId)
+          ? previousMatchId
+          : "all";
+
+        const selectedMatches = statsMatchSelect.value === "all"
+          ? shooterMatches
+          : shooterMatches.filter(match => match.id === statsMatchSelect.value);
+        const availableStages = [...new Set(selectedMatches.flatMap(match => match.stages))];
+        statsStageSelect.replaceChildren();
+        const allStagesOption = document.createElement("option");
+        allStagesOption.value = "all";
+        allStagesOption.textContent = "All stages";
+        statsStageSelect.append(allStagesOption);
+        availableStages.forEach(stage => {
+          const option = document.createElement("option");
+          option.value = stage;
+          option.textContent = stage;
+          statsStageSelect.append(option);
+        });
+        statsStageSelect.disabled = !availableStages.length;
+        statsStageSelect.value = availableStages.includes(previousStage) ? previousStage : "all";
+
+        statsContent.replaceChildren();
+        const person = teamMembers.find(candidate => candidate.id === statsShooterSelect.value);
+        if (!person) {
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          empty.textContent = state.activeTeamId
+            ? "Add a team member to see shooter statistics."
+            : "Choose or create a team in Team Setup to view statistics.";
+          statsContent.append(empty);
+          return;
+        }
+        if (!selectedMatches.length) {
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          empty.textContent = teamMatches.length
+            ? "This shooter has no match history yet. Add them to a match to see statistics."
+            : "Create a match for this team to see match and stage statistics.";
+          statsContent.append(empty);
+          return;
+        }
+
+        const selectedStage = statsStageSelect.value;
+        const relevantMatches = selectedMatches.filter(match =>
+          selectedStage === "all" || match.stages.includes(selectedStage)
+        );
+        const stageRows = relevantMatches.flatMap(match =>
+          match.stages
+            .filter(stage => selectedStage === "all" || stage === selectedStage)
+            .map(stage => {
+              const runs = state.runs.filter(run =>
+                run.matchId === match.id && run.competitorId === person.id && run.stage === stage
+              );
+              const scoredRuns = runs.map(run => ({ run, scored: getScoredRun(run) }))
+                .filter(entry => entry.scored)
+                .sort((a, b) => a.scored.seconds - b.scored.seconds);
+              const stageScore = scoredRuns.slice(0, 4).reduce((total, entry) => total + entry.scored.seconds, 0);
+              const accepted = scoredRuns.length === 5 &&
+                state.stageAcceptances[`${match.id}\u0000${person.id}\u0000${stage}`] === true;
+              const shots = { total: 0, hits: 0, misses: 0, unknownAttempts: 0 };
+              runs.forEach(run => {
+                if (!run.targetResults || !stageDefinitions[stage]) return;
+                stageDefinitions[stage].targets.forEach(target => {
+                  const result = getTargetResult(run, target.id);
+                  if (result === "hit") shots.hits += 1;
+                  else if (result === "miss") shots.misses += 1;
+                  else return;
+                  const outcome = run.targetResults[target.id];
+                  if (typeof outcome === "object" && Number.isInteger(outcome.attempts) && outcome.attempts >= 0) {
+                    shots.total += outcome.attempts;
+                  } else {
+                    shots.unknownAttempts += 1;
+                  }
+                });
+              });
+              return { match, stage, runs, scoredRuns, stageScore, accepted, shots };
+            })
+        );
+        const totalRuns = stageRows.flatMap(row => row.runs);
+        const scoredTimes = totalRuns.map(getScoredRun).filter(Boolean).map(result => result.seconds);
+        const totalShots = stageRows.reduce((total, row) => total + row.shots.total, 0);
+        const totalHits = stageRows.reduce((total, row) => total + row.shots.hits, 0);
+        const totalMisses = stageRows.reduce((total, row) => total + row.shots.misses, 0);
+        const acceptedRows = stageRows.filter(row => row.accepted);
+        const totalMatchScore = acceptedRows.reduce((total, row) => total + row.stageScore, 0);
+        const metrics = document.createElement("div");
+        metrics.className = "summary-metrics";
+        const metricValues = [
+          ["Matches", relevantMatches.length],
+          ["Strings recorded", totalRuns.length],
+          ["Shots taken", totalShots],
+          ["Target hits", totalHits],
+          ["Target misses", totalMisses],
+          ["Target hit rate", totalHits + totalMisses
+            ? `${(totalHits / (totalHits + totalMisses) * 100).toFixed(1)}%`
+            : "—"],
+          ["Average scored string", scoredTimes.length
+            ? formatTime(scoredTimes.reduce((total, time) => total + time, 0) / scoredTimes.length)
+            : "—"],
+          ["Accepted stages", `${acceptedRows.length}/${stageRows.length}`],
+          ["Accepted stage total", acceptedRows.length ? formatTime(totalMatchScore) : "—"]
+        ];
+        metricValues.forEach(([label, value]) => {
+          const card = document.createElement("div");
+          card.className = "summary-metric";
+          const metricLabel = document.createElement("div");
+          metricLabel.className = "summary-metric-label";
+          metricLabel.textContent = label;
+          const metricValue = document.createElement("div");
+          metricValue.className = "summary-metric-value";
+          metricValue.textContent = String(value);
+          card.append(metricLabel, metricValue);
+          metrics.append(card);
+        });
+        statsContent.append(metrics);
+
+        const tableWrap = document.createElement("div");
+        tableWrap.className = "summary-table-wrap";
+        const table = document.createElement("table");
+        table.className = "summary-table";
+        const thead = document.createElement("thead");
+        const header = document.createElement("tr");
+        ["Match", "Stage", "String 1", "String 2", "String 3", "String 4", "String 5", "Stage total", "Status", "Shots", "Hits", "Misses", "Hit %"].forEach(text => {
+          const cell = document.createElement("th");
+          cell.scope = "col";
+          cell.textContent = text;
+          header.append(cell);
+        });
+        thead.append(header);
+        table.append(thead);
+        const tbody = document.createElement("tbody");
+        stageRows.forEach(rowData => {
+          const knownResults = rowData.shots.hits + rowData.shots.misses;
+          const values = [
+            rowData.match.name,
+            rowData.stage,
+            ...Array.from({ length: 5 }, (_, index) => {
+              const run = rowData.runs[index];
+              if (!run) return "—";
+              const scored = getScoredRun(run);
+              return scored ? formatTime(scored.seconds) : `${formatTime(run.seconds)}*`;
+            }),
+            rowData.scoredRuns.length ? formatTime(rowData.stageScore) : "—",
+            rowData.accepted
+              ? "Accepted"
+              : rowData.scoredRuns.length === 5 ? "Awaiting acceptance" : `${rowData.scoredRuns.length}/5 scored`,
+            String(rowData.shots.total),
+            String(rowData.shots.hits),
+            String(rowData.shots.misses),
+            knownResults ? `${(rowData.shots.hits / knownResults * 100).toFixed(1)}%` : "—"
+          ];
+          const tr = document.createElement("tr");
+          values.forEach((value, index) => {
+            const cell = document.createElement(index < 2 ? "th" : "td");
+            if (index < 2) cell.scope = "row";
+            if (index === 8) cell.className = "stage-status";
+            cell.textContent = value;
+            tr.append(cell);
+          });
+          tbody.append(tr);
+        });
+        table.append(tbody);
+        tableWrap.append(table);
+        statsContent.append(tableWrap);
+        const note = document.createElement("p");
+        note.className = "summary-note";
+        note.textContent = "* Raw timer time shown when target results are incomplete. Stage total is the four fastest scored strings; only accepted stage totals count toward the accepted total.";
+        statsContent.append(note);
+      }
+
+      function renderSchedule() {
+        scheduleList.replaceChildren();
+        const teamEvents = state.schedule
+          .filter(event => event.teamId === state.activeTeamId)
+          .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time) || a.title.localeCompare(b.title));
+        document.querySelector("#add-schedule-event-button").disabled = !state.activeTeamId;
+        scheduleStatus.textContent = state.activeTeamId
+          ? ""
+          : "Create or select a team in Team Setup before adding schedule events.";
+        if (!teamEvents.length) {
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          empty.textContent = state.activeTeamId
+            ? "No events are scheduled for this team yet."
+            : "Select a team to see its schedule.";
+          scheduleList.append(empty);
+          return;
+        }
+        teamEvents.forEach(event => {
+          const item = document.createElement("article");
+          item.className = "schedule-event";
+          const date = document.createElement("div");
+          date.className = "schedule-event-date";
+          const parsedDate = new Date(`${event.date}T00:00:00`);
+          date.textContent = Number.isNaN(parsedDate.getTime())
+            ? event.date
+            : parsedDate.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+          const details = document.createElement("div");
+          details.className = "schedule-event-main";
+          const title = document.createElement("div");
+          title.className = "schedule-event-title";
+          title.textContent = event.title;
+          details.append(title);
+          const secondary = [event.time, event.location].filter(Boolean).join(" · ");
+          if (secondary) {
+            const line = document.createElement("div");
+            line.className = "schedule-event-detail";
+            line.textContent = secondary;
+            details.append(line);
+          }
+          if (event.notes) {
+            const notes = document.createElement("div");
+            notes.className = "schedule-event-detail";
+            notes.textContent = event.notes;
+            details.append(notes);
+          }
+          const remove = document.createElement("button");
+          remove.className = "icon-button archive-button";
+          remove.type = "button";
+          remove.textContent = "Remove";
+          remove.setAttribute("aria-label", `Remove ${event.title} from team schedule`);
+          remove.addEventListener("click", () => {
+            state.schedule = state.schedule.filter(candidate => candidate.id !== event.id);
+            saveState();
+            renderSchedule();
+          });
+          item.append(date, details, remove);
+          scheduleList.append(item);
+        });
+      }
+
+      function formatEventDate(date) {
+        if (!date) return "Date not set";
+        const parsedDate = new Date(`${date}T00:00:00`);
+        return Number.isNaN(parsedDate.getTime())
+          ? date
+          : parsedDate.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+      }
+
+      function renderStageReference(stageName) {
+        const definition = stageDefinitions[stageName];
+        stageReferenceRows.replaceChildren();
+        if (!definition) {
+          stageReferenceCaption.textContent = "Choose a stage to see its target layout.";
+          stageReferenceDiagramCaption.textContent = "";
+          stageReferenceDiagram.replaceChildren();
+          return;
+        }
+        stageReferenceCaption.textContent =
+          `${stageName} · ${definition.layout.length} targets. Lateral offsets are approximate; confirm measurements and placement on the actual range.`;
+        renderStageGuide(stageName, {
+          diagramContainer: stageReferenceDiagram,
+          captionElement: stageReferenceDiagramCaption,
+          updateScoringCard: false
+        });
+        const orderedPositions = [...definition.layout].sort((a, b) =>
+          a.distance - b.distance || a.x - b.x
+        );
+        orderedPositions.forEach(position => {
+          const target = definition.targets.find(candidate => candidate.id === position.id);
+          if (!target) return;
+          const targetName = target.kind === "bang"
+            ? `Bang ${target.id.slice(-1)}`
+            : target.kind === "stop" ? "Stop" : "Penalty";
+          const lateralPosition = position.x === 0
+            ? "Center"
+            : `${Math.abs(position.x)} ft ${position.x < 0 ? "left" : "right"} of center`;
+          const row = document.createElement("tr");
+          [
+            targetName,
+            lateralPosition,
+            `${position.distance} ft`,
+            target.label.split(" · ").slice(1).join(" · ") || target.label
+          ].forEach(value => {
+            const cell = document.createElement("td");
+            cell.textContent = value;
+            row.append(cell);
+          });
+          stageReferenceRows.append(row);
+        });
+      }
+
+      function renderMatchEvents() {
+        matchEventList.replaceChildren();
+        const events = state.matches.filter(match => match.teamId === state.activeTeamId);
+        if (!events.length) {
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          empty.textContent = state.activeTeamId
+            ? "No events created yet. Use the setup form above to plan one in advance."
+            : "Create or select a team before setting up events.";
+          matchEventList.append(empty);
+          return;
+        }
+        events.sort((a, b) =>
+          (a.startDate || "9999-12-31").localeCompare(b.startDate || "9999-12-31") ||
+          a.name.localeCompare(b.name)
+        );
+        events.forEach(match => {
+          const card = document.createElement("article");
+          card.className = "match-event-card";
+          const main = document.createElement("div");
+          main.className = "match-event-main";
+          const title = document.createElement("div");
+          title.className = "match-event-title";
+          title.textContent = match.name;
+          const date = match.endDate
+            ? `${formatEventDate(match.startDate)} – ${formatEventDate(match.endDate)}`
+            : formatEventDate(match.startDate);
+          const details = [
+            date,
+            match.location,
+            `${match.stages.length} ${match.stages.length === 1 ? "stage" : "stages"}`,
+            `${match.competitorIds.length} ${match.competitorIds.length === 1 ? "member" : "members"}`
+          ].filter(Boolean);
+          const detail = document.createElement("div");
+          detail.className = "match-event-detail";
+          detail.textContent = details.join(" · ");
+          main.append(title, detail);
+          if (match.notes) {
+            const notes = document.createElement("div");
+            notes.className = "match-event-detail";
+            notes.textContent = match.notes;
+            main.append(notes);
+          }
+          match.squads.forEach((squad, index) => {
+            const squadLine = document.createElement("div");
+            squadLine.className = "match-event-detail";
+            const names = squad.map(id => {
+              const personName = state.competitors.find(person => person.id === id)?.name;
+              const classification = getShooterClassificationLabel(match, id);
+              return personName ? `${personName}${classification ? ` (${classification})` : ""}` : "";
+            }).filter(Boolean);
+            squadLine.textContent = `Squad ${index + 1}: ${names.join(", ")}`;
+            main.append(squadLine);
+          });
+          const scoreButton = document.createElement("button");
+          scoreButton.className = "button secondary";
+          scoreButton.type = "button";
+          scoreButton.textContent = "Score this event";
+          scoreButton.addEventListener("click", () => {
+            state.activeMatchId = match.id;
+            competitorSelect.value = "";
+            runStage.value = "";
+            runTime.value = "";
+            saveState();
+            render();
+            showScreen("scoring");
+          });
+          const editButton = document.createElement("button");
+          editButton.className = "button secondary";
+          editButton.type = "button";
+          editButton.textContent = "Edit event";
+          editButton.addEventListener("click", () => beginMatchEdit(match));
+          const actions = document.createElement("div");
+          actions.className = "match-event-actions";
+          actions.append(editButton, scoreButton);
+          card.append(main, actions);
+          matchEventList.append(card);
+        });
+      }
+
+      function beginMatchEdit(match) {
+        editingMatchId = match.id;
+        newMatchName.value = match.name;
+        newMatchStartDate.value = match.startDate;
+        newMatchEndDate.value = match.endDate;
+        newMatchLocation.value = match.location;
+        newMatchNotes.value = match.notes;
+        matchStageOptions.replaceChildren();
+        matchShooterOptions.replaceChildren();
+        matchSquadAssignments = new Map();
+        matchClassificationAssignments = new Map(
+          Object.entries(match.classifications).map(([id, classification]) => [id, { ...classification }])
+        );
+        matchSquadCount = match.squads.length;
+        renderMatchSetupOptions();
+        matchStageOptions.querySelectorAll('input[name="match-stages"]').forEach(input => {
+          input.checked = match.stages.includes(input.value);
+        });
+        matchShooterOptions.querySelectorAll('input[name="match-shooters"]').forEach(input => {
+          input.checked = match.competitorIds.includes(input.value);
+        });
+        match.squads.forEach((squad, index) => {
+          squad.forEach(id => matchSquadAssignments.set(id, index + 1));
+        });
+        renderMatchSquadOptions();
+        saveMatchButton.textContent = "Save event changes";
+        cancelMatchEditButton.hidden = false;
+        matchSetupStatus.textContent = `Editing ${match.name}. Removing a shooter or stage will permanently delete its recorded scores for this event.`;
+        document.querySelector("#match-form").scrollIntoView({ behavior: "smooth", block: "start" });
+        newMatchName.focus({ preventScroll: true });
+      }
+
+      function cancelMatchEdit() {
+        editingMatchId = null;
+        matchSquadAssignments = new Map();
+        matchClassificationAssignments = new Map();
+        matchSquadCount = 0;
+        document.querySelector("#match-form").reset();
+        matchStageOptions.replaceChildren();
+        matchShooterOptions.replaceChildren();
+        saveMatchButton.textContent = "Create event";
+        cancelMatchEditButton.hidden = true;
+        matchSetupStatus.textContent = "";
+        renderMatchSetupOptions();
+      }
+
+      function renderShooterSummary(person) {
+        const metrics = getShooterMetrics(person.id);
+        const activeStages = getActiveMatch()?.stages ?? [];
+        const acceptedStageScores = activeStages
+          .map(stage => ({ stage, ...getStageScore(person.id, stage) }))
+          .filter(result => result.complete && state.stageAcceptances[getStageKey(person.id, result.stage)] === true);
+        const matchTotal = acceptedStageScores.reduce((total, result) => total + result.score, 0);
+        const panel = document.createElement("section");
+        panel.className = "summary-panel";
+        panel.id = `summary-panel-${person.id}`;
+        panel.setAttribute("role", "tabpanel");
+        panel.setAttribute("aria-labelledby", `summary-tab-${person.id}`);
+        panel.hidden = person.id !== selectedSummaryCompetitorId;
+
+        const metricGrid = document.createElement("div");
+        metricGrid.className = "summary-metrics";
+        const knownResults = metrics.hits + metrics.misses;
+        const hitRate = knownResults ? `${(metrics.hits / knownResults * 100).toFixed(1)}%` : "—";
+        const averageTime = metrics.scoredStrings ? formatTime(metrics.scoredTime / metrics.scoredStrings) : "—";
+        [
+          ["Shots taken", metrics.shots],
+          ["Target hits", metrics.hits],
+          ["Target misses", metrics.misses],
+          ["Target hit rate", hitRate],
+          ["Scored strings", metrics.scoredStrings],
+          ["Average scored time", averageTime],
+          ["Accepted stages", `${acceptedStageScores.length}/${activeStages.length}`],
+          ["Match total", acceptedStageScores.length ? formatTime(matchTotal) : "—"]
+        ].forEach(([label, value]) => {
+          const card = document.createElement("div");
+          card.className = "summary-metric";
+          const metricLabel = document.createElement("div");
+          metricLabel.className = "summary-metric-label";
+          metricLabel.textContent = label;
+          const metricValue = document.createElement("div");
+          metricValue.className = "summary-metric-value";
+          metricValue.textContent = String(value);
+          card.append(metricLabel, metricValue);
+          metricGrid.append(card);
+        });
+        panel.append(metricGrid);
+
+        const notes = document.createElement("p");
+        notes.className = "summary-note";
+        notes.textContent = metrics.unknownAttempts
+          ? `Hit rate is based on marked target outcomes (hits ÷ hits and misses), not individual shots. Shot-attempt counts are unavailable for ${metrics.unknownAttempts} marked target result${metrics.unknownAttempts === 1 ? "" : "s"} from older records.`
+          : "Hit rate is based on marked target outcomes (hits ÷ hits and misses), not individual shots.";
+        panel.append(notes);
+
+        const tableWrap = document.createElement("div");
+        tableWrap.className = "summary-table-wrap";
+        const table = document.createElement("table");
+        table.className = "summary-table";
+        const thead = document.createElement("thead");
+        const headerRow = document.createElement("tr");
+        ["Stage", "String 1", "String 2", "String 3", "String 4", "String 5", "Stage total", "Status", "Shots", "Hits", "Misses", "Hit %"].forEach(label => {
+          const th = document.createElement("th");
+          th.scope = "col";
+          th.textContent = label;
+          headerRow.append(th);
+        });
+        thead.append(headerRow);
+        table.append(thead);
+        const tbody = document.createElement("tbody");
+        activeStages.forEach(stage => {
+          const stageRuns = getStageRuns(person.id, stage);
+          const score = getStageScore(person.id, stage);
+          const stageAccepted = score.complete && state.stageAcceptances[getStageKey(person.id, stage)] === true;
+          const rowMetrics = { shots: 0, hits: 0, misses: 0, unknownAttempts: 0 };
+          stageRuns.forEach(run => {
+            if (!run.targetResults) return;
+            stageDefinitions[stage].targets.forEach(target => {
+              const result = getTargetResult(run, target.id);
+              if (result === "hit") rowMetrics.hits += 1;
+              else if (result === "miss") rowMetrics.misses += 1;
+              else return;
+              const outcome = run.targetResults[target.id];
+              if (typeof outcome === "object" && Number.isInteger(outcome.attempts) && outcome.attempts >= 0) {
+                rowMetrics.shots += outcome.attempts;
+              } else {
+                rowMetrics.unknownAttempts += 1;
+              }
+            });
+          });
+          const knownResults = rowMetrics.hits + rowMetrics.misses;
+          const hitRate = knownResults ? `${(rowMetrics.hits / knownResults * 100).toFixed(1)}%` : "—";
+          const cells = [
+            stage,
+            ...Array.from({ length: 5 }, (_, index) => {
+              const run = stageRuns[index];
+              if (!run) return "—";
+              const scored = getScoredRun(run);
+              return scored ? formatTime(scored.seconds) : `${formatTime(run.seconds)}*`;
+            }),
+            score.runs.length ? formatTime(score.score) : "—",
+            stageAccepted ? "Accepted" : score.complete ? "Awaiting acceptance" : `${score.runs.length}/5 scored`,
+            String(rowMetrics.shots),
+            String(rowMetrics.hits),
+            String(rowMetrics.misses),
+            hitRate
+          ];
+          const row = document.createElement("tr");
+          cells.forEach((value, index) => {
+            const cell = document.createElement(index === 0 ? "th" : "td");
+            if (index === 0) cell.scope = "row";
+            if (index === 7) cell.className = "stage-status";
+            cell.textContent = value;
+            row.append(cell);
+          });
+          tbody.append(row);
+        });
+        table.append(tbody);
+        tableWrap.append(table);
+        panel.append(tableWrap);
+        const tableNote = document.createElement("p");
+        tableNote.className = "summary-note";
+        tableNote.textContent = "* Raw timer time shown because target results are incomplete. Stage total is the four fastest scored strings; only accepted stage totals count toward Match Total.";
+        panel.append(tableNote);
+        return panel;
+      }
+
+      function renderShooterSummaries() {
+        summaryTabs.replaceChildren();
+        summaryPanels.replaceChildren();
+        const matchCompetitors = getActiveCompetitors();
+        shooterSummaries.hidden = !matchCompetitors.length;
+        if (!matchCompetitors.some(person => person.id === selectedSummaryCompetitorId)) {
+          selectedSummaryCompetitorId = matchCompetitors[0]?.id ?? null;
+        }
+        matchCompetitors.forEach((person, index) => {
+          const tab = document.createElement("button");
+          tab.className = "summary-tab";
+          tab.id = `summary-tab-${person.id}`;
+          tab.type = "button";
+          tab.setAttribute("role", "tab");
+          tab.setAttribute("aria-controls", `summary-panel-${person.id}`);
+          tab.setAttribute("aria-selected", String(person.id === selectedSummaryCompetitorId));
+          tab.tabIndex = person.id === selectedSummaryCompetitorId ? 0 : -1;
+          tab.textContent = person.name;
+          tab.addEventListener("click", () => {
+            selectedSummaryCompetitorId = person.id;
+            renderShooterSummaries();
+            summaryTabs.querySelector('[aria-selected="true"]')?.focus();
+          });
+          tab.addEventListener("keydown", event => {
+            const tabButtons = [...summaryTabs.querySelectorAll('[role="tab"]')];
+            const currentIndex = tabButtons.indexOf(tab);
+            const nextIndex = event.key === "ArrowRight"
+              ? (currentIndex + 1) % tabButtons.length
+              : event.key === "ArrowLeft"
+                ? (currentIndex - 1 + tabButtons.length) % tabButtons.length
+                : event.key === "Home"
+                  ? 0
+                  : event.key === "End"
+                    ? tabButtons.length - 1
+                    : -1;
+            if (nextIndex < 0) return;
+            event.preventDefault();
+            tabButtons[nextIndex].click();
+          });
+          summaryTabs.append(tab);
+          summaryPanels.append(renderShooterSummary(person));
+          if (index === 0 && !selectedSummaryCompetitorId) selectedSummaryCompetitorId = person.id;
+        });
+      }
+
+      function updateRunStatus() {
+        const competitorId = competitorSelect.value;
+        const stage = runStage.value;
+        if (!competitorId || !stage) {
+          runStatus.textContent = "Choose a competitor and stage to load its target guide.";
+          addRunButton.disabled = false;
+          return;
+        }
+        const competitor = state.competitors.find(person => person.id === competitorId);
+        if (competitor?.archived) {
+          runStatus.textContent = "This member is archived. Existing strings and scores are available to review, but new strings cannot be added.";
+          addRunButton.disabled = true;
+          return;
+        }
+
+        const stageRuns = getStageRuns(competitorId, stage);
+        const count = stageRuns.length;
+        const complete = count >= 5;
+        const scoredCount = stageRuns.filter(run => getScoredRun(run)).length;
+        runStatus.textContent = scoredCount === 5
+          ? "All 5 strings are scored; review and accept the stage total below."
+          : complete
+            ? `All 5 strings are recorded, but only ${scoredCount} have complete target results. Remove and re-enter incomplete strings.`
+            : `${count} of 5 strings recorded · ${scoredCount} scored.`;
+        addRunButton.disabled = complete;
+      }
+
+      function render() {
+        const requestedCompetitorId = competitorSelect.value;
+        const requestedStage = runStage.value;
+        const selectedMatchId = state.activeMatchId;
+        const activeMatch = getActiveMatch();
+        const activeStages = activeMatch?.stages ?? [];
+        const activeCompetitors = getActiveCompetitors();
+        const teamCompetitors = getActiveTeamCompetitors();
+        const selectedCompetitorId = activeCompetitors.some(person => person.id === requestedCompetitorId)
+          ? requestedCompetitorId
+          : "";
+        const selectedStage = activeStages.includes(requestedStage) ? requestedStage : "";
+        teamSelect.replaceChildren();
+        const teamPlaceholder = document.createElement("option");
+        teamPlaceholder.value = "";
+        const activeTeams = state.teams.filter(team => !team.archived);
+        teamPlaceholder.textContent = activeTeams.length ? "Choose team" : "Create a team to begin";
+        teamPlaceholder.disabled = true;
+        teamSelect.append(teamPlaceholder);
+        activeTeams.forEach(team => {
+          const option = document.createElement("option");
+          option.value = team.id;
+          option.textContent = team.name;
+          teamSelect.append(option);
+        });
+        teamSelect.disabled = !activeTeams.length;
+        if (activeTeams.some(team => team.id === state.activeTeamId)) teamSelect.value = state.activeTeamId;
+        archiveTeamButton.disabled = !activeTeams.some(team => team.id === state.activeTeamId);
+        document.querySelector("#team-form button[type='submit']").disabled = false;
+        archivedTeamList.replaceChildren();
+        const archivedTeams = state.teams.filter(team => team.archived);
+        document.querySelector("#archived-teams-section").hidden = !archivedTeams.length;
+        archivedTeams.forEach(team => {
+          const item = document.createElement("li");
+          const label = document.createElement("div");
+          label.className = "person-name";
+          label.textContent = team.name;
+          const restore = document.createElement("button");
+          restore.className = "icon-button";
+          restore.type = "button";
+          restore.textContent = "Restore";
+          restore.setAttribute("aria-label", `Restore ${team.name}`);
+          restore.addEventListener("click", () => {
+            team.archived = false;
+            state.activeTeamId = team.id;
+            state.activeMatchId = state.matches.find(match => match.teamId === team.id)?.id ?? null;
+            saveState();
+            render();
+          });
+          const permanentlyDelete = document.createElement("button");
+          permanentlyDelete.className = "icon-button archive-button";
+          permanentlyDelete.type = "button";
+          permanentlyDelete.textContent = "Permanently delete";
+          permanentlyDelete.setAttribute("aria-label", `Permanently delete ${team.name} and its history`);
+          permanentlyDelete.addEventListener("click", () => {
+            const confirmed = window.confirm(
+              `Permanently delete ${team.name}, its members, matches, and all related scores? This cannot be undone.`
+            );
+            if (!confirmed) return;
+            const teamMemberIds = new Set(state.competitors
+              .filter(person => person.teamId === team.id)
+              .map(person => person.id));
+            const teamMatchIds = new Set(state.matches
+              .filter(match => match.teamId === team.id)
+              .map(match => match.id));
+            state.teams = state.teams.filter(candidate => candidate.id !== team.id);
+            state.competitors = state.competitors.filter(person => !teamMemberIds.has(person.id));
+            state.matches = state.matches.filter(match => !teamMatchIds.has(match.id));
+            state.schedule = state.schedule.filter(event => event.teamId !== team.id);
+            state.runs = state.runs.filter(run =>
+              !teamMatchIds.has(run.matchId) && !teamMemberIds.has(run.competitorId)
+            );
+            Object.keys(state.stageAcceptances).forEach(key => {
+              const [matchId, competitorId] = key.split("\u0000");
+              if (teamMatchIds.has(matchId) || teamMemberIds.has(competitorId)) {
+                delete state.stageAcceptances[key];
+              }
+            });
+            if (state.activeTeamId === team.id) {
+              state.activeTeamId = state.teams.find(candidate => !candidate.archived)?.id ?? null;
+              state.activeMatchId = state.matches.find(match =>
+                match.teamId === state.activeTeamId && !match.archived
+              )?.id ?? null;
+              competitorSelect.value = "";
+              runStage.value = "";
+              runTime.value = "";
+            }
+            saveState();
+            render();
+          });
+          const actions = document.createElement("div");
+          actions.className = "roster-actions";
+          actions.append(restore, permanentlyDelete);
+          item.append(label, actions);
+          archivedTeamList.append(item);
+        });
+
+        const teamMatches = state.matches.filter(match => match.teamId === state.activeTeamId);
+        matchName.replaceChildren();
+        const matchPlaceholder = document.createElement("option");
+        matchPlaceholder.value = "";
+        matchPlaceholder.textContent = !state.activeTeamId
+          ? "Choose a team first"
+          : teamMatches.length ? "Choose event" : "Create an event in Match Setup first";
+        matchPlaceholder.disabled = true;
+        matchName.append(matchPlaceholder);
+        teamMatches.forEach(match => {
+          const option = document.createElement("option");
+          option.value = match.id;
+          option.textContent = match.name;
+          matchName.append(option);
+        });
+        matchName.disabled = !teamMatches.length;
+        if (teamMatches.some(match => match.id === selectedMatchId)) matchName.value = selectedMatchId;
+        renderMatchEvents();
+        const selectedEvent = teamMatches.find(match => match.id === state.activeMatchId);
+        if (selectedEvent) {
+          const dateText = selectedEvent.endDate
+            ? `${formatEventDate(selectedEvent.startDate)} – ${formatEventDate(selectedEvent.endDate)}`
+            : formatEventDate(selectedEvent.startDate);
+          const eventInfo = [
+            selectedEvent.name,
+            dateText,
+            selectedEvent.location,
+            `${selectedEvent.stages.length} ${selectedEvent.stages.length === 1 ? "stage" : "stages"}`,
+            `${selectedEvent.competitorIds.length} ${selectedEvent.competitorIds.length === 1 ? "shooter" : "shooters"}`,
+            selectedEvent.notes
+          ].filter(Boolean);
+          const squadInfo = selectedEvent.squads.map((squad, index) => {
+            const classifiedNames = squad.map(id => {
+              const personName = state.competitors.find(person => person.id === id)?.name;
+              const classification = getShooterClassificationLabel(selectedEvent, id);
+              return personName ? `${personName}${classification ? ` (${classification})` : ""}` : "";
+            }).filter(Boolean);
+            return classifiedNames.length ? `Squad ${index + 1}: ${classifiedNames.join(", ")}` : "";
+          }).filter(Boolean);
+          selectedEventDetails.textContent = [
+            eventInfo.join(" · "),
+            ...squadInfo
+          ].join("\n");
+        } else {
+          selectedEventDetails.textContent = "Create an event in Match Setup, then select it here when you are ready to score.";
+        }
+        document.querySelector("#add-member-button").disabled = !state.activeTeamId;
+        memberSetupStatus.textContent = state.activeTeamId ? "" : "Create or select a team before adding members.";
+        document.querySelector("#match-form button[type='submit']").disabled = !state.activeTeamId || !teamCompetitors.length;
+        renderMatchSetupOptions();
+        document.querySelector("#competitor-count").textContent = String(activeCompetitors.length);
+        const matchRuns = state.runs.filter(run => run.matchId === state.activeMatchId);
+        document.querySelector("#run-count").textContent = String(matchRuns.length);
+
+        const scoredRuns = matchRuns.map(getScoredRun).filter(Boolean);
+        const fastest = scoredRuns.reduce((best, run) => best === null || run.seconds < best ? run.seconds : best, null);
+        document.querySelector("#fastest-time").textContent = fastest === null ? "—" : formatTime(fastest);
+
+        competitorSelect.replaceChildren();
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = !activeMatch
+          ? "Choose a match first"
+          : activeCompetitors.length ? "Choose competitor" : "No shooters selected for this match";
+        placeholder.disabled = true;
+        placeholder.selected = true;
+        competitorSelect.append(placeholder);
+        activeCompetitors.forEach(person => {
+          const option = document.createElement("option");
+          option.value = person.id;
+          option.textContent = person.archived ? `${person.name} (archived)` : person.name;
+          competitorSelect.append(option);
+        });
+        competitorSelect.disabled = !activeCompetitors.length;
+        if (activeCompetitors.some(person => person.id === selectedCompetitorId)) {
+          competitorSelect.value = selectedCompetitorId;
+        }
+
+        runStage.replaceChildren();
+        const stagePlaceholder = document.createElement("option");
+        stagePlaceholder.value = "";
+        stagePlaceholder.textContent = "Choose stage";
+        stagePlaceholder.disabled = true;
+        stagePlaceholder.selected = true;
+        runStage.append(stagePlaceholder);
+        activeStages.forEach(stage => {
+          const option = document.createElement("option");
+          option.value = stage;
+          option.textContent = stage;
+          runStage.append(option);
+        });
+        runStage.disabled = !activeStages.length;
+        if (activeStages.includes(selectedStage)) runStage.value = selectedStage;
+        renderStageGuide(runStage.value);
+
+        rosterList.replaceChildren();
+        archivedMemberList.replaceChildren();
+        const archivedMembers = state.competitors.filter(person =>
+          person.teamId === state.activeTeamId && person.archived
+        );
+        document.querySelector("#archived-members-section").hidden = !archivedMembers.length;
+        archivedMembers.forEach(person => {
+          const item = document.createElement("li");
+          const label = document.createElement("div");
+          label.className = "person-name";
+          label.textContent = person.name;
+          const restore = document.createElement("button");
+          restore.className = "icon-button";
+          restore.type = "button";
+          restore.textContent = "Restore";
+          restore.setAttribute("aria-label", `Restore ${person.name} to team`);
+          restore.addEventListener("click", () => {
+            person.archived = false;
+            matchShooterOptions.replaceChildren();
+            saveState();
+            render();
+          });
+          const permanentlyDelete = document.createElement("button");
+          permanentlyDelete.className = "icon-button archive-button";
+          permanentlyDelete.type = "button";
+          permanentlyDelete.textContent = "Permanently delete";
+          permanentlyDelete.setAttribute("aria-label", `Permanently delete ${person.name} and scores`);
+          permanentlyDelete.addEventListener("click", () => {
+            const confirmed = window.confirm(
+              `Permanently delete ${person.name} and all of their recorded strings and stage approvals? This cannot be undone.`
+            );
+            if (!confirmed) return;
+            state.competitors = state.competitors.filter(candidate => candidate.id !== person.id);
+            state.runs = state.runs.filter(run => run.competitorId !== person.id);
+            state.matches.forEach(match => {
+              match.competitorIds = match.competitorIds.filter(id => id !== person.id);
+              match.squads = match.squads
+                .map(squad => squad.filter(id => id !== person.id))
+                .filter(squad => squad.length);
+              delete match.classifications[person.id];
+            });
+            Object.keys(state.stageAcceptances).forEach(key => {
+              if (key.split("\u0000")[1] === person.id) delete state.stageAcceptances[key];
+            });
+            saveState();
+            render();
+          });
+          const actions = document.createElement("div");
+          actions.className = "roster-actions";
+          actions.append(restore, permanentlyDelete);
+          item.append(label, actions);
+          archivedMemberList.append(item);
+        });
+        matchTotalList.replaceChildren();
+        matchTotals.hidden = !activeCompetitors.length;
+        if (!state.activeTeamId || !teamCompetitors.length) {
+          const empty = document.createElement("li");
+          empty.className = "empty";
+          const heading = document.createElement("strong");
+          heading.textContent = !state.activeTeamId ? "Create or select a team" : "Your team is ready to start";
+          const message = document.createTextNode(!state.activeTeamId
+            ? "Create a team above, then add its members here."
+            : "Add a team member using the form above.");
+          empty.append(heading, message);
+          rosterList.append(empty);
+        }
+        state.competitors.filter(person => person.teamId === state.activeTeamId).forEach(person => {
+          if (activeMatch?.competitorIds.includes(person.id)) {
+            const stageScores = activeStages.map(stage => ({
+              stage,
+              ...getStageScore(person.id, stage),
+              accepted: state.stageAcceptances[getStageKey(person.id, stage)] === true
+            }));
+            const acceptedStages = stageScores.filter(result => result.complete && result.accepted);
+            const matchTotal = acceptedStages.reduce((total, result) => total + result.score, 0);
+            const matchComplete = activeStages.length > 0 && acceptedStages.length === activeStages.length;
+            const totalCard = document.createElement("div");
+            totalCard.className = "match-total-card";
+            const totalTop = document.createElement("div");
+            totalTop.className = "match-total-top";
+            const totalName = document.createElement("div");
+            totalName.className = "person-name";
+            totalName.textContent = person.name;
+            const totalValue = document.createElement("div");
+            totalValue.className = "match-total-value";
+            totalValue.textContent = acceptedStages.length ? formatTime(matchTotal) : "—";
+            totalTop.append(totalName, totalValue);
+            const totalDetail = document.createElement("div");
+            totalDetail.className = "match-total-detail";
+            totalDetail.textContent = `${acceptedStages.length}/${activeStages.length} stages accepted · ${matchComplete ? "final" : "provisional"} · fastest 4 strings per stage`;
+            totalCard.append(totalTop, totalDetail);
+            matchTotalList.append(totalCard);
+          }
+          if (person.archived) return;
+
+          const item = document.createElement("li");
+          const personBlock = document.createElement("div");
+          personBlock.className = "person";
+          const avatar = document.createElement("div");
+          avatar.className = "avatar";
+          avatar.setAttribute("aria-hidden", "true");
+          avatar.textContent = initials(person.name);
+          const details = document.createElement("div");
+          const name = document.createElement("div");
+          name.className = "person-name";
+          name.textContent = person.name;
+          const meta = document.createElement("div");
+          meta.className = "person-meta";
+          const runCount = state.runs.filter(run => run.competitorId === person.id).length;
+          const memberDetails = [
+            person.grade ? person.grade : "",
+            person.graduationYear ? `Class of ${person.graduationYear}` : "",
+            person.email,
+            person.phone,
+            person.guardianName ? `Parent/guardian: ${person.guardianName}` : "",
+            person.guardianEmail,
+            person.guardianPhone
+          ].filter(Boolean);
+          meta.textContent = [
+            person.grade,
+            person.graduationYear ? `Class of ${person.graduationYear}` : "",
+            `${runCount} ${runCount === 1 ? "run" : "runs"} recorded`
+          ].filter(Boolean).join(" · ");
+          details.append(name, meta);
+          if (memberDetails.some(value => value !== person.grade && value !== (person.graduationYear ? `Class of ${person.graduationYear}` : ""))) {
+            const contact = document.createElement("div");
+            contact.className = "person-meta";
+            contact.textContent = memberDetails.filter(value =>
+              value !== person.grade && value !== (person.graduationYear ? `Class of ${person.graduationYear}` : "")
+            ).join(" · ");
+            if (contact.textContent) details.append(contact);
+          }
+          personBlock.append(avatar, details);
+          const archive = document.createElement("button");
+          archive.className = "icon-button archive-button";
+          archive.type = "button";
+          archive.textContent = "Delete";
+          archive.setAttribute("aria-label", `Delete ${person.name} from active team members`);
+          archive.addEventListener("click", () => {
+            const confirmed = window.confirm(
+              `Remove ${person.name} from the active team roster? Existing matches and scores will be kept. You can restore this member from Archived team members.`
+            );
+            if (!confirmed) return;
+            person.archived = true;
+            saveState();
+            render();
+          });
+          const actions = document.createElement("div");
+          actions.className = "roster-actions";
+          actions.append(archive);
+          item.append(personBlock, actions);
+          rosterList.append(item);
+        });
+        if (activeMatch && !activeCompetitors.length) {
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          empty.textContent = "This match has no shooters. Create another match with shooters selected from the roster.";
+          matchTotalList.append(empty);
+        }
+        renderShooterSummaries();
+
+        runList.replaceChildren();
+        if (!selectedCompetitorId || !activeStages.includes(selectedStage)) {
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          empty.textContent = "Choose a shooter and stage to see their strings here.";
+          runList.append(empty);
+          updateRunStatus();
+          renderStatsScreen();
+          renderSchedule();
+          return;
+        }
+        const person = state.competitors.find(candidate => candidate.id === selectedCompetitorId);
+        if (!person) {
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          empty.textContent = "Choose a shooter and stage to see their strings here.";
+          runList.append(empty);
+          updateRunStatus();
+          renderStatsScreen();
+          renderSchedule();
+          return;
+        }
+        const validRuns = state.runs.filter(run =>
+          run.matchId === state.activeMatchId && run.competitorId === selectedCompetitorId && run.stage === selectedStage
+        );
+        if (!validRuns.length) {
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          const message = document.createElement("strong");
+          message.textContent = `No strings recorded for ${person.name} on ${selectedStage}`;
+          empty.append(message, document.createTextNode("Enter the first string above."));
+          runList.append(empty);
+        }
+        const groups = new Map();
+        validRuns.forEach(run => {
+          const key = `${run.competitorId}\u0000${run.stage}`;
+          if (!groups.has(key)) groups.set(key, []);
+          groups.get(key).push(run);
+        });
+        groups.forEach((groupRuns, key) => {
+          const [competitorId, stageName] = key.split("\u0000");
+          const rankedRuns = groupRuns.map(run => ({ run, scored: getScoredRun(run) }))
+            .filter(entry => entry.scored)
+            .sort((a, b) => a.scored.seconds - b.scored.seconds || groupRuns.indexOf(a.run) - groupRuns.indexOf(b.run));
+          const keptIds = new Set(rankedRuns.slice(0, 4).map(entry => entry.run.id));
+          const score = rankedRuns.slice(0, 4).reduce((total, entry) => total + entry.scored.seconds, 0);
+          const stageComplete = rankedRuns.length === 5;
+          const stageKey = getStageKey(competitorId, stageName);
+          const stageAccepted = stageComplete && state.stageAcceptances[stageKey] === true;
+          const group = document.createElement("section");
+          group.className = "run-group";
+          const header = document.createElement("div");
+          header.className = "run-group-head";
+          const heading = document.createElement("div");
+          const name = document.createElement("div");
+          name.className = "person-name";
+          name.textContent = person.name;
+          const stage = document.createElement("div");
+          stage.className = "run-stage";
+          stage.textContent = stageName;
+          heading.append(name, stage);
+          const scoreBlock = document.createElement("div");
+          scoreBlock.className = "run-group-score";
+          scoreBlock.append(document.createTextNode(rankedRuns.length ? formatTime(score) : "—"));
+          const scoreNote = document.createElement("small");
+          scoreNote.textContent = stageAccepted
+            ? "Stage total accepted · fastest 4 of 5"
+            : stageComplete
+              ? "5/5 scored strings · awaiting stage acceptance"
+              : `${rankedRuns.length}/5 scored strings · provisional`;
+          scoreBlock.append(scoreNote);
+          if (stageComplete && !stageAccepted) {
+            const acceptStage = document.createElement("button");
+            acceptStage.className = "accept-stage-button";
+            acceptStage.type = "button";
+            acceptStage.textContent = "Accept stage total";
+            acceptStage.setAttribute("aria-label", `Accept ${stageName} stage total for ${person.name}`);
+            acceptStage.addEventListener("click", () => {
+              state.stageAcceptances[stageKey] = true;
+              saveState();
+              render();
+            });
+            scoreBlock.append(acceptStage);
+          }
+          header.append(heading, scoreBlock);
+          group.append(header);
+
+          groupRuns.forEach((run, index) => {
+            const scored = getScoredRun(run);
+            const item = document.createElement("div");
+            item.className = "run-item";
+            const details = document.createElement("div");
+            const stringLabel = document.createElement("div");
+            stringLabel.className = "person-name";
+            stringLabel.textContent = `String ${index + 1} of 5`;
+            const status = document.createElement("div");
+            status.className = `run-status${scored && rankedRuns.length === 5 && !keptIds.has(run.id) ? " dropped" : ""}`;
+              const resultDetails = run.targetResults
+                ? stageDefinitions[run.stage].targets.map(target => {
+                  const outcome = run.targetResults[target.id];
+                  if (!outcome) return null;
+                  const result = typeof outcome === "string" ? outcome : outcome.result;
+                  const attempts = typeof outcome === "object" && Number.isInteger(outcome.attempts)
+                    ? `, ${outcome.attempts} ${outcome.attempts === 1 ? "attempt" : "attempts"}`
+                    : "";
+                  return `${target.kind === "stop" ? "Stop" : target.kind === "penalty" ? "Penalty" : target.id.replace("bang-", "B")}: ${result === "hit" ? "Hit" : "Miss"}${attempts}`;
+                }).filter(Boolean).join(" · ")
+                : "";
+              status.textContent = !scored
+                ? "Not scored · target results missing"
+                : `${rankedRuns.length < 5 ? "Scored string" : keptIds.has(run.id) ? "Currently in fastest 4" : "Slowest · not counted in stage total"}${resultDetails ? ` · ${resultDetails}` : ""}`;
+            details.append(stringLabel, status);
+            const timeBlock = document.createElement("div");
+            timeBlock.className = "run-time-block";
+            const time = document.createElement("div");
+            time.className = "run-time";
+            time.textContent = formatTime(scored ? scored.seconds : run.seconds);
+            const timeDetail = document.createElement("div");
+            timeDetail.className = "run-time-detail";
+            if (!scored) {
+              timeDetail.textContent = "Target results not recorded";
+            } else if (scored.stopMissed) {
+              timeDetail.textContent = `Timer ${formatTime(run.seconds)} · stop missed`;
+            } else if (scored.penaltySeconds > 0) {
+              timeDetail.textContent = `Timer ${formatTime(run.seconds)} + ${formatTime(scored.penaltySeconds)} penalty`;
+            } else {
+              timeDetail.textContent = `Timer ${formatTime(run.seconds)} · no target penalty`;
+            }
+            timeBlock.append(time, timeDetail);
+            const actions = document.createElement("div");
+            actions.className = "run-actions";
+            const remove = document.createElement("button");
+            remove.className = "icon-button";
+            remove.type = "button";
+            remove.textContent = "Remove";
+            remove.setAttribute("aria-label", `Remove string ${index + 1} for ${person.name} on ${stageName}`);
+            remove.addEventListener("click", () => {
+              state.runs = state.runs.filter(candidate => candidate.id !== run.id);
+              delete state.stageAcceptances[stageKey];
+              saveState();
+              render();
+            });
+            actions.append(remove);
+            item.append(details, timeBlock, actions);
+            group.append(item);
+          });
+          runList.append(group);
+        });
+        updateRunStatus();
+        renderStatsScreen();
+        renderSchedule();
+      }
+
+      teamSelect.addEventListener("change", () => {
+        if (editingMatchId) cancelMatchEdit();
+        state.activeTeamId = teamSelect.value;
+        state.activeMatchId = state.matches.find(match => match.teamId === state.activeTeamId)?.id ?? null;
+        matchShooterOptions.replaceChildren();
+        competitorSelect.value = "";
+        runStage.value = "";
+        runTime.value = "";
+        saveState();
+        render();
+      });
+      archiveTeamButton.addEventListener("click", () => {
+        const team = state.teams.find(candidate => candidate.id === state.activeTeamId && !candidate.archived);
+        if (!team) return;
+        const confirmed = window.confirm(
+          `Delete ${team.name} from active teams? Its members, matches, and scores will be kept in Archived teams. You can restore the team later.`
+        );
+        if (!confirmed) return;
+        team.archived = true;
+        state.activeTeamId = state.teams.find(candidate => !candidate.archived)?.id ?? null;
+        state.activeMatchId = state.matches.find(match => match.teamId === state.activeTeamId)?.id ?? null;
+        matchShooterOptions.replaceChildren();
+        competitorSelect.value = "";
+        runStage.value = "";
+        runTime.value = "";
+        saveState();
+        render();
+        if (!state.activeTeamId) showScreen("team");
+      });
+      teamScreenButton.addEventListener("click", () => showScreen("team"));
+      matchScreenButton.addEventListener("click", () => showScreen("setup"));
+      scoringScreenButton.addEventListener("click", () => showScreen("scoring"));
+      stageReferenceScreenButton.addEventListener("click", () => showScreen("stage-reference"));
+      stageReferenceSelect.addEventListener("change", () => renderStageReference(stageReferenceSelect.value));
+      matchShooterOptions.addEventListener("change", renderMatchSquadOptions);
+      addMatchSquadButton.addEventListener("click", () => {
+        matchSquadCount += 1;
+        renderMatchSquadOptions();
+      });
+      scheduleScreenButton.addEventListener("click", () => showScreen("schedule"));
+      welcomeCreateTeamButton.addEventListener("click", () => {
+        showScreen("team");
+        newTeamName.focus();
+      });
+      document.querySelector("#schedule-form").addEventListener("submit", event => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        const title = String(formData.get("title") ?? "").trim();
+        const date = String(formData.get("date") ?? "");
+        if (!state.activeTeamId || !title || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+          scheduleStatus.textContent = state.activeTeamId
+            ? "Enter an event name and a valid date."
+            : "Create or select a team in Team Setup before adding schedule events.";
+          return;
+        }
+        state.schedule.push({
+          id: crypto.randomUUID(),
+          teamId: state.activeTeamId,
+          title,
+          date,
+          time: String(formData.get("time") ?? ""),
+          location: String(formData.get("location") ?? "").trim(),
+          notes: String(formData.get("notes") ?? "").trim()
+        });
+        event.currentTarget.reset();
+        scheduleStatus.textContent = "";
+        saveState();
+        renderSchedule();
+      });
+      statsScreenButton.addEventListener("click", () => showScreen("stats"));
+      cancelMatchEditButton.addEventListener("click", cancelMatchEdit);
+      statsShooterSelect.addEventListener("change", renderStatsScreen);
+      statsMatchSelect.addEventListener("change", renderStatsScreen);
+      statsStageSelect.addEventListener("change", renderStatsScreen);
+      matchName.addEventListener("change", () => {
+        state.activeMatchId = matchName.value;
+        competitorSelect.value = "";
+        runStage.value = "";
+        runTime.value = "";
+        saveState();
+        render();
+        showScreen("scoring");
+      });
+      competitorSelect.addEventListener("change", () => {
+        runTime.value = "";
+        render();
+      });
+      runStage.addEventListener("change", () => {
+        runTime.value = "";
+        render();
+      });
+
+      document.querySelector("#team-form").addEventListener("submit", event => {
+        event.preventDefault();
+        const name = newTeamName.value.trim();
+        if (!name) return;
+        const team = { id: crypto.randomUUID(), name };
+        state.teams.push(team);
+        state.activeTeamId = team.id;
+        state.activeMatchId = null;
+        matchShooterOptions.replaceChildren();
+        newTeamName.value = "";
+        saveState();
+        render();
+        showScreen("team");
+      });
+
+      document.querySelector("#competitor-form").addEventListener("submit", event => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        const firstName = String(formData.get("first-name") ?? "").trim();
+        const lastName = String(formData.get("last-name") ?? "").trim();
+        if (!state.activeTeamId || !firstName || !lastName) {
+          memberSetupStatus.textContent = state.activeTeamId
+            ? "Enter both a first and last name."
+            : "Create or select a team before adding members.";
+          return;
+        }
+        const preferredName = String(formData.get("preferred-name") ?? "").trim();
+        const member = {
+          id: crypto.randomUUID(),
+          teamId: state.activeTeamId,
+          firstName,
+          lastName,
+          preferredName,
+          name: preferredName || `${firstName} ${lastName}`,
+          grade: String(formData.get("grade") ?? "").trim(),
+          graduationYear: String(formData.get("graduation-year") ?? ""),
+          email: String(formData.get("email") ?? "").trim(),
+          phone: String(formData.get("phone") ?? "").trim(),
+          guardianName: String(formData.get("guardian-name") ?? "").trim(),
+          guardianEmail: String(formData.get("guardian-email") ?? "").trim(),
+          guardianPhone: String(formData.get("guardian-phone") ?? "").trim()
+        };
+        state.competitors.push(member);
+        event.currentTarget.reset();
+        matchShooterOptions.replaceChildren();
+        memberSetupStatus.textContent = "";
+        saveState();
+        render();
+        document.querySelector("#member-first-name").focus();
+      });
+
+      document.querySelector("#match-form").addEventListener("submit", event => {
+        event.preventDefault();
+        const name = newMatchName.value.trim();
+        const startDate = newMatchStartDate.value;
+        const endDate = newMatchEndDate.value;
+        const selectedStages = [...matchStageOptions.querySelectorAll('input[name="match-stages"]:checked')].map(input => input.value);
+        const selectedShooters = [...matchShooterOptions.querySelectorAll('input[name="match-shooters"]:checked')].map(input => input.value);
+        const selectedSquads = selectedMatchSquads();
+        if (!name || !state.activeTeamId || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+          matchSetupStatus.textContent = state.activeTeamId
+            ? "Enter an event name and a valid start date."
+            : "Create or select a team before setting up an event.";
+          return;
+        }
+        if (endDate && (!/^\d{4}-\d{2}-\d{2}$/.test(endDate) || endDate < startDate)) {
+          matchSetupStatus.textContent = "The event end date must be the same as or later than the start date.";
+          return;
+        }
+        if (!selectedStages.length || !selectedShooters.length) {
+          matchSetupStatus.textContent = "Select at least one stage and one team member to create an event.";
+          return;
+        }
+        if (selectedSquads.some(squad => squad.length > 4) ||
+          selectedSquads.flat().length !== selectedShooters.length) {
+          matchSetupStatus.textContent = "Assign every participating team member to a squad of no more than four.";
+          return;
+        }
+        const selectedClassifications = selectedMatchClassifications();
+        const missingClassification = selectedShooters.find(id => {
+          const classification = selectedClassifications[id];
+          return !classification?.division ||
+            (divisionCategories[classification.division]?.length > 0 && !classification.category) ||
+            !classification?.firearm;
+        });
+        if (missingClassification) {
+          const personName = state.competitors.find(person => person.id === missingClassification)?.name ?? "Each shooter";
+          matchSetupStatus.textContent = `Choose a division, required category, and firearm discipline for ${personName}.`;
+          return;
+        }
+        if (selectedShooters.some(id => !getActiveTeamCompetitors().some(person => person.id === id))) {
+          const currentMatch = state.matches.find(match => match.id === editingMatchId);
+          const invalidShooter = selectedShooters.some(id => {
+            const person = state.competitors.find(candidate => candidate.id === id);
+            return !person || person.teamId !== state.activeTeamId ||
+              (person.archived && !currentMatch?.competitorIds.includes(id));
+          });
+          if (invalidShooter) {
+            matchSetupStatus.textContent = "Select team members from the currently selected team.";
+            return;
+          }
+        }
+        const currentMatch = state.matches.find(match => match.id === editingMatchId);
+        if (editingMatchId && !currentMatch) {
+          matchSetupStatus.textContent = "This event could not be found. Cancel editing and try again.";
+          return;
+        }
+        if (currentMatch) {
+          const removedShooters = new Set(currentMatch.competitorIds.filter(id => !selectedShooters.includes(id)));
+          const removedStages = new Set(currentMatch.stages.filter(stage => !selectedStages.includes(stage)));
+          const removedRuns = state.runs.filter(run =>
+            run.matchId === currentMatch.id &&
+            (removedShooters.has(run.competitorId) || removedStages.has(run.stage))
+          );
+          if (removedRuns.length && !window.confirm(
+            `Removing the selected shooter or stage will permanently delete ${removedRuns.length} recorded ${removedRuns.length === 1 ? "string" : "strings"} from this event. Continue?`
+          )) return;
+          currentMatch.name = name;
+          currentMatch.startDate = startDate;
+          currentMatch.endDate = endDate;
+          currentMatch.location = newMatchLocation.value.trim();
+          currentMatch.notes = newMatchNotes.value.trim();
+          currentMatch.stages = selectedStages;
+          currentMatch.competitorIds = selectedShooters;
+          currentMatch.squads = selectedSquads;
+          currentMatch.classifications = selectedClassifications;
+          state.runs = state.runs.filter(run => !removedRuns.includes(run));
+          Object.keys(state.stageAcceptances).forEach(key => {
+            const [matchId, competitorId, stage] = key.split("\u0000");
+            if (matchId === currentMatch.id &&
+              (removedShooters.has(competitorId) || removedStages.has(stage))) {
+              delete state.stageAcceptances[key];
+            }
+          });
+          if (state.activeMatchId === currentMatch.id &&
+            (removedShooters.has(competitorSelect.value) || removedStages.has(runStage.value))) {
+            competitorSelect.value = "";
+            runStage.value = "";
+            runTime.value = "";
+          }
+          matchSetupStatus.textContent = "";
+          cancelMatchEdit();
+          saveState();
+          render();
+          return;
+        }
+        const match = {
+          id: crypto.randomUUID(),
+          name,
+          teamId: state.activeTeamId,
+          startDate,
+          endDate,
+          location: newMatchLocation.value.trim(),
+          notes: newMatchNotes.value.trim(),
+          stages: selectedStages,
+          competitorIds: selectedShooters,
+          squads: selectedSquads,
+          classifications: selectedClassifications
+        };
+        state.matches.push(match);
+        state.activeMatchId = match.id;
+        event.currentTarget.reset();
+        matchStageOptions.replaceChildren();
+        matchShooterOptions.replaceChildren();
+        matchSquadAssignments = new Map();
+        matchClassificationAssignments = new Map();
+        matchSquadCount = 0;
+        matchSetupStatus.textContent = "";
+        competitorSelect.value = "";
+        runStage.value = "";
+        runTime.value = "";
+        saveState();
+        render();
+      });
+
+      document.querySelector("#run-form").addEventListener("submit", event => {
+        event.preventDefault();
+        const activeMatch = getActiveMatch();
+        const competitorId = competitorSelect.value;
+        const stage = runStage.value;
+        const seconds = Number(runTime.value);
+        if (!activeMatch || !activeMatch.competitorIds.includes(competitorId) ||
+          !activeMatch.stages.includes(stage) || !Number.isFinite(seconds) || seconds <= 0) return;
+        if (state.competitors.find(person => person.id === competitorId)?.archived) {
+          updateRunStatus();
+          return;
+        }
+        if (getStageRuns(competitorId, stage).length >= 5) {
+          updateRunStatus();
+          return;
+        }
+        const definition = stageDefinitions[stage];
+        const formData = new FormData(event.currentTarget);
+        const targetResults = Object.fromEntries(definition.targets.map(target => [
+          target.id,
+          {
+            result: formData.get(`target-${target.id}`),
+            attempts: Number(formData.get(`attempts-${target.id}`))
+          }
+        ]));
+        if (!definition.targets.every(target =>
+          (targetResults[target.id].result === "hit" || targetResults[target.id].result === "miss") &&
+          Number.isInteger(targetResults[target.id].attempts) &&
+          targetResults[target.id].attempts >= 0 &&
+          (targetResults[target.id].result !== "hit" || targetResults[target.id].attempts >= 1)
+        )) return;
+        state.runs.push({ id: crypto.randomUUID(), matchId: activeMatch.id, competitorId, stage, seconds, targetResults });
+        runTime.value = "";
+        saveState();
+        render();
+        runTime.focus();
+      });
+
+      renderStageReference(stageReferenceSelect.value);
+      render();
+      showScreen(state.teams.length ? activeScreen : "welcome");
+    })();
+  </script>
+</body>
+</html>
